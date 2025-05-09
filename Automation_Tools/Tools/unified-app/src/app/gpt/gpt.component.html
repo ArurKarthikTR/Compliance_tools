@@ -1,0 +1,60 @@
+<div class="gpt-container">
+  <h2>GPT Compliance Assistant</h2>
+  <p>Ask me about compliance requirements like GDPR, HIPAA, PCI DSS, or ISO 27001.</p>
+
+  <div class="chat-container">
+    <!-- Chat history -->
+    <div class="chat-history" #chatHistory>
+      <div *ngFor="let message of chatMessages" 
+           [ngClass]="{'user-message': message.sender === 'user', 'system-message': message.sender === 'system'}">
+        <div class="message-header">
+          <div class="avatar" [ngClass]="message.sender">
+            <span *ngIf="message.sender === 'user'">U</span>
+            <span *ngIf="message.sender === 'system'">AI</span>
+          </div>
+          <div class="sender-name">
+            {{ message.sender === 'user' ? 'You' : 'Compliance Assistant' }}
+          </div>
+        </div>
+        <div class="message-content" [innerHTML]="message.content"></div>
+      </div>
+
+      <!-- Loading indicator -->
+      <div *ngIf="isLoading" class="system-message loading-message">
+        <div class="message-header">
+          <div class="avatar system">
+            <span>AI</span>
+          </div>
+          <div class="sender-name">Compliance Assistant</div>
+        </div>
+        <div class="message-content">
+          <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input section -->
+    <div class="chat-input-container">
+      <textarea 
+        class="chat-input" 
+        placeholder="Ask about compliance requirements..." 
+        [(ngModel)]="userInput" 
+        (keydown)="handleKeyDown($event)"
+        [disabled]="isLoading"
+        rows="1"
+        #inputElement
+        (input)="adjustTextareaHeight(inputElement)">
+      </textarea>
+      <button 
+        class="send-button" 
+        [disabled]="!userInput.trim() || isLoading"
+        (click)="sendMessage()">
+        Send
+      </button>
+    </div>
+  </div>
+</div>

@@ -8,6 +8,10 @@
   overflow-x: hidden;
 }
 
+.app-content {
+  flex: 1;
+}
+
 // Slide-out menu
 .slide-menu {
   position: fixed;
@@ -414,6 +418,7 @@
   color: #fff;
   padding: 0.25rem 2rem;
   text-align: center;
+  margin-top: 0;
   
   p {
     margin: 0;
