@@ -113,8 +113,8 @@
       <nav class="sidebar-nav">
         <ul>
           <!-- My Applications Header -->
-          <li class="section-header">
-            <div class="header-title" (click)="navigateAndCloseSidebar('/')" style="cursor: pointer;">
+          <li class="section-header" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <div class="header-title" (click)="navigateOnly('/')" style="cursor: pointer;" routerLink="/">
               <i class="fas fa-th"></i>
               <span>TOOLS</span>
             </div>

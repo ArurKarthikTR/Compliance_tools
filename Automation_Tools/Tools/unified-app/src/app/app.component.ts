@@ -51,4 +51,9 @@ export class AppComponent {
     this.router.navigate([route]);
     this.toggleSidebar();
   }
+  
+  // Navigate to a route without affecting the sidebar
+  navigateOnly(route: string): void {
+    this.router.navigate([route]);
+  }
 }
