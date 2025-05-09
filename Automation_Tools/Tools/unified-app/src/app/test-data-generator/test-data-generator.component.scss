@@ -1,7 +1,24 @@
-.container {
-  max-width: 1000px;
-  margin: 0 auto;
+:host {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 100vh;
+  background-color: white;
+  box-sizing: border-box;
   padding: 20px;
+  margin: 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+.container {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 25px;
+  background-color: inherit;
+  border-radius: 10px;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
 }
 
 h2 {

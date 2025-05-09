@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { GptComponent } from './gpt/gpt.component';
 import { LandingPageComponent } from './landing-page/landing-page.component';
 import { DateConverterComponent } from './date-converter/date-converter.component';
 import { FileDifferenceComponent } from './file-difference/file-difference.component';
@@ -17,6 +18,7 @@ export const routes: Routes = [
   { path: 'file-difference/xlsx', component: FileDifferenceComponent, data: { fileType: 'xlsx' } },
   { path: 'file-difference/xml', component: FileDifferenceComponent, data: { fileType: 'xml' } },
   { path: 'test-data-generator', component: TestDataGeneratorComponent },
+  { path: 'gpt', component: GptComponent },
   { path: 'about', component: AboutComponent },
   { path: '**', redirectTo: '' } // Redirect to landing page for any unknown routes
 ];
