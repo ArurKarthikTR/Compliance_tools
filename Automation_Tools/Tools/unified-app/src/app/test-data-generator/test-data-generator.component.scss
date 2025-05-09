@@ -3,13 +3,21 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  min-height: 100vh;
+  min-height: 100%; /* Use min-height instead of fixed height */
   background-color: white;
   box-sizing: border-box;
   padding: 20px;
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
   text-align: center;
+  width: 100%;
+}
+
+/* Wrapper for the entire component content */
+:host > div {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .container {

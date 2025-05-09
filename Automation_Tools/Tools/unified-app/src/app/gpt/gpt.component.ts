@@ -37,7 +37,7 @@ export class GptComponent implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     this.chatMessages.push({
       sender: 'system',
-      content: 'Hello! I\'m your Compliance Assistant. Ask me about GDPR, HIPAA, PCI DSS, or ISO 27001.',
+      content: 'Hello! I\'m your Compliance Assistant. Ask me about Indirect Tax Compliance - OIC/OSU .',
       timestamp: new Date()
     });
   }
