@@ -13,6 +13,9 @@ export const routes: Routes = [
   { path: 'file-formats', component: FileFormatSelectionComponent },
   { path: 'date-converter', component: DateConverterComponent },
   { path: 'file-difference', component: FileDifferenceComponent },
+  { path: 'file-difference/csv', component: FileDifferenceComponent, data: { fileType: 'csv' } },
+  { path: 'file-difference/xlsx', component: FileDifferenceComponent, data: { fileType: 'xlsx' } },
+  { path: 'file-difference/xml', component: FileDifferenceComponent, data: { fileType: 'xml' } },
   { path: 'test-data-generator', component: TestDataGeneratorComponent },
   { path: 'about', component: AboutComponent },
   { path: '**', redirectTo: '' } // Redirect to landing page for any unknown routes

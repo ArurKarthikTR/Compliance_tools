@@ -37,6 +37,10 @@ def update_dates():
 def upload_files():
     return file_difference_service.upload_files(request)
 
+@app.route('/api/file-difference/preview', methods=['POST'])
+def preview_file():
+    return file_difference_service.preview_file(request)
+
 @app.route('/api/file-difference/health', methods=['GET'])
 def health_check():
     return file_difference_service.health_check()

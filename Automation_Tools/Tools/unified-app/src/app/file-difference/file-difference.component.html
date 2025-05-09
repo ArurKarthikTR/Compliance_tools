@@ -17,6 +17,7 @@
 
   <app-file-upload 
     *ngIf="!comparisonData" 
+    [selectedFileType]="selectedFileType"
     (comparisonResults)="handleComparisonResults($event)"
     (loading)="handleLoading($event)"
     (error)="handleError($event)">
