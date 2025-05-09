@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
+  constructor(private router: Router) {}
   title = 'Unified Data Tools';
   
   // Track expanded state of dropdown menus
@@ -43,5 +44,16 @@ export class AppComponent {
     } else {
       document.body.style.overflow = '';
     }
+  }
+  
+  // Navigate to a route and close the sidebar
+  navigateAndCloseSidebar(route: string): void {
+    this.router.navigate([route]);
+    this.toggleSidebar();
+  }
+  
+  // Navigate to a route without affecting the sidebar
+  navigateOnly(route: string): void {
+    this.router.navigate([route]);
   }
 }

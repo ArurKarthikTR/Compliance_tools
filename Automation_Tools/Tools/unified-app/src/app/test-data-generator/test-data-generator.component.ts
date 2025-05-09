@@ -25,24 +25,26 @@ export class TestDataGeneratorComponent implements OnInit {
   successMessage: string = '';
   
   fieldTypes: FieldType[] = [
-    { value: 'Name', label: 'Full Name', hasOptions: false },
-    { value: 'FirstName', label: 'First Name', hasOptions: false },
-    { value: 'LastName', label: 'Last Name', hasOptions: false },
-    { value: 'Email', label: 'Email Address', hasOptions: false },
-    { value: 'Phone', label: 'Phone Number', hasOptions: false },
-    { value: 'Address', label: 'Address', hasOptions: false },
-    { value: 'City', label: 'City', hasOptions: false },
-    { value: 'Country', label: 'Country', hasOptions: false },
-    { value: 'PostalCode', label: 'Postal Code', hasOptions: false },
-    { value: 'Company', label: 'Company Name', hasOptions: false },
-    { value: 'JobTitle', label: 'Job Title', hasOptions: false },
-    { value: 'String', label: 'Text String', hasOptions: true, optionsConfig: { minLength: 5, maxLength: 20 } },
+    { value: 'Name', label: 'Name', hasOptions: false },
+    { value: 'String', label: 'String', hasOptions: true, optionsConfig: { minLength: 5, maxLength: 20 } },
     { value: 'Number', label: 'Number', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 0 } },
-    { value: 'Decimal', label: 'Decimal', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
-    { value: 'Boolean', label: 'Boolean', hasOptions: false },
     { value: 'Date', label: 'Date', hasOptions: true, optionsConfig: { format: 'YYYY-MM-DD' } },
-    { value: 'CustomText', label: 'Custom Text', hasOptions: true, optionsConfig: { pattern: '', values: [] } }
+    { value: 'Email', label: 'Email', hasOptions: false },
+    { value: 'Address', label: 'Address', hasOptions: false },
+    { value: 'Country', label: 'Country', hasOptions: false },
+    { value: 'Boolean', label: 'Boolean', hasOptions: false },
+    { value: 'Float', label: 'Float', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
+    { value: 'Decimal', label: 'Decimal', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
+    { value: 'Phone', label: 'Phone', hasOptions: false }
   ];
+  
+  showFieldForm: boolean = false;
+  newField: FieldConfig = {
+    id: '',
+    name: '',
+    type: 'Name',
+    unique: false
+  };
 
   constructor(
     private fb: FormBuilder,
@@ -55,33 +57,71 @@ export class TestDataGeneratorComponent implements OnInit {
 
   initForm(): void {
     this.configForm = this.fb.group({
-      rowCount: [100, [Validators.required, Validators.min(1), Validators.max(1000)]],
+      rowCount: [10, [Validators.required, Validators.min(1), Validators.max(1000)]],
       fields: this.fb.array([])
     });
-
-    // Add a default field
-    this.addField();
   }
 
   get fields(): FormArray {
     return this.configForm.get('fields') as FormArray;
   }
 
-  addField(): void {
+  // Initialize new field when showFieldForm becomes true
+  ngDoCheck(): void {
+    if (this.showFieldForm && !this.newField.id) {
+      this.newField = {
+        id: this.generateId(),
+        name: '',
+        type: 'Name',
+        unique: false
+      };
+    }
+  }
+
+  cancelAddField(): void {
+    this.showFieldForm = false;
+  }
+
+  saveNewField(): void {
+    if (!this.newField.name) {
+      this.errorMessage = 'Column name is required';
+      return;
+    }
+
     const fieldGroup = this.fb.group({
-      id: [this.generateId()],
-      name: ['', Validators.required],
-      type: ['Name', Validators.required],
+      id: [this.newField.id],
+      name: [this.newField.name, Validators.required],
+      type: [this.newField.type, Validators.required],
       options: this.fb.group({}),
-      unique: [false]
+      unique: [this.newField.unique]
     });
 
     this.fields.push(fieldGroup);
-    this.updateFieldOptions(this.fields.length - 1);
+    this.showFieldForm = false;
+    this.errorMessage = '';
   }
 
   removeField(index: number): void {
     this.fields.removeAt(index);
+  }
+
+  duplicateField(index: number): void {
+    const originalField = this.fields.at(index) as FormGroup;
+    const fieldCopy = this.fb.group({
+      id: [this.generateId()],
+      name: [originalField.get('name')?.value, Validators.required],
+      type: [originalField.get('type')?.value, Validators.required],
+      options: this.fb.group(originalField.get('options')?.value || {}),
+      unique: [originalField.get('unique')?.value]
+    });
+
+    this.fields.push(fieldCopy);
+  }
+
+  editField(index: number): void {
+    // This would typically open a modal or form for editing
+    // For now, we'll just log that the edit button was clicked
+    console.log('Edit field at index', index);
   }
 
   updateFieldOptions(index: number): void {
@@ -97,8 +137,9 @@ export class TestDataGeneratorComponent implements OnInit {
     }
   }
 
-  onFieldTypeChange(index: number): void {
-    this.updateFieldOptions(index);
+  getFieldTypeLabel(typeValue: string): string {
+    const fieldType = this.fieldTypes.find(type => type.value === typeValue);
+    return fieldType ? fieldType.label : 'Name';
   }
 
   generatePreview(): void {
@@ -127,7 +168,7 @@ export class TestDataGeneratorComponent implements OnInit {
       });
   }
 
-  downloadData(format: 'csv' | 'json' | 'excel'): void {
+  downloadData(format: 'csv' | 'json' | 'xml' | 'excel'): void {
     if (this.configForm.invalid) {
       this.errorMessage = 'Please fix the form errors before downloading data';
       return;
@@ -148,6 +189,10 @@ export class TestDataGeneratorComponent implements OnInit {
       case 'json':
         downloadObservable = this.testDataGeneratorService.downloadJson(request);
         fileExtension = 'json';
+        break;
+      case 'xml':
+        downloadObservable = this.testDataGeneratorService.downloadXml(request);
+        fileExtension = 'xml';
         break;
       case 'excel':
         downloadObservable = this.testDataGeneratorService.downloadExcel(request);
