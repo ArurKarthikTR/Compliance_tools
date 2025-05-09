@@ -64,4 +64,15 @@ export class TestDataGeneratorService {
       responseType: 'blob'
     });
   }
+
+  /**
+   * Download generated data as XML
+   * @param request The data generation request
+   * @returns Observable with the XML file
+   */
+  downloadXml(request: GenerateDataRequest): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/download-xml`, request, {
+      responseType: 'blob'
+    });
+  }
 }

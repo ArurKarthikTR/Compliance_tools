@@ -58,6 +58,10 @@ def download_json():
 def download_excel():
     return test_generator_service.download_excel(request.json)
 
+@app.route('/api/test-generator/download-xml', methods=['POST'])
+def download_xml():
+    return test_generator_service.download_xml(request.json)
+
 # General routes
 @app.route('/api/health', methods=['GET'])
 def api_health_check():
