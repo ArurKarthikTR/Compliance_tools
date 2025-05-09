@@ -76,23 +76,42 @@ class FileDifferenceService:
     def _process_excel(self, file_path):
         """Process an Excel file and return its data"""
         try:
-            # Try to read with header in row 0 (default)
-            df = pd.read_excel(file_path, engine='openpyxl')
+            print(f"Processing Excel file: {file_path}")
+            start_time = pd.Timestamp.now()
+            
+            # Use nrows parameter to check the first few rows to determine header
+            sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10)
             
             # Check if columns are unnamed
-            unnamed_count = sum(1 for col in df.columns if 'Unnamed:' in str(col))
+            unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
             
-            # If most columns are unnamed, try reading with header in row 1
-            if unnamed_count > len(df.columns) / 2:
-                df = pd.read_excel(file_path, engine='openpyxl', header=1)
+            # Determine the header row based on the sample
+            header_row = 0
+            if unnamed_count > len(sample_df.columns) / 2:
+                # Try with header in row 1
+                header_row = 1
+                sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10, header=1)
+                unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
                 
-                # If still unnamed, try row 2
-                unnamed_count = sum(1 for col in df.columns if 'Unnamed:' in str(col))
-                if unnamed_count > len(df.columns) / 2:
-                    df = pd.read_excel(file_path, engine='openpyxl', header=2)
+                if unnamed_count > len(sample_df.columns) / 2:
+                    # Try with header in row 2
+                    header_row = 2
             
-            # Handle potential NaN values and convert to appropriate types
+            print(f"Determined header row: {header_row}")
+            
+            # Now read the actual data with the determined header row
+            # Use chunksize for better memory management with large files
+            df = pd.read_excel(file_path, engine='openpyxl', header=header_row)
+            
+            # Handle potential NaN values first
             df = df.fillna('')
+            
+            # Optimize memory usage
+            # Convert object columns to category if they have few unique values
+            # Only do this after handling NaN values to avoid categorical errors
+            for col in df.select_dtypes(include=['object']).columns:
+                if df[col].nunique() < len(df) * 0.5:  # If less than 50% unique values
+                    df[col] = df[col].astype('category')
             
             # Convert all numeric columns to string to ensure consistent comparison
             for col in df.select_dtypes(include=['number']).columns:
@@ -101,21 +120,21 @@ class FileDifferenceService:
             # Convert DataFrame to a standardized format
             columns = df.columns.tolist()
             
-            # Convert rows to list of dictionaries
-            rows = []
-            for _, row in df.iterrows():
-                row_dict = {}
-                for col in columns:
-                    # Convert all values to strings for consistent comparison
-                    value = row[col]
-                    if pd.isna(value):
+            # Convert rows to list of dictionaries more efficiently
+            # Use df.to_dict(orient='records') which is faster than iterating
+            rows = df.to_dict(orient='records')
+            
+            # Post-process the rows to ensure consistent string representation
+            for row_dict in rows:
+                for col, value in row_dict.items():
+                    if value == '':
                         row_dict[col] = None
-                    elif isinstance(value, (int, float)):
-                        # Format numbers consistently
+                    elif value is not None:
                         row_dict[col] = str(value)
-                    else:
-                        row_dict[col] = str(value) if value != '' else None
-                rows.append(row_dict)
+            
+            end_time = pd.Timestamp.now()
+            processing_time = (end_time - start_time).total_seconds()
+            print(f"Excel processing completed in {processing_time:.2f} seconds")
             
             return {
                 'columns': columns,
@@ -535,6 +554,108 @@ class FileDifferenceService:
             }
         
         return row_comparison
+    
+    def preview_file(self, request):
+        """
+        Process a single file and return a preview of its data
+        """
+        try:
+            # Check if file is present in the request
+            if 'file' not in request.files:
+                return jsonify({'error': 'File is required'}), 400
+            
+            file = request.files['file']
+            
+            # Check if filename is empty
+            if file.filename == '':
+                return jsonify({'error': 'No selected file'}), 400
+            
+            # Check if file is allowed type
+            if not self.allowed_file(file.filename):
+                return jsonify({'error': 'File type not supported'}), 400
+            
+            # Get file type
+            file_type = self.get_file_type(file.filename)
+            
+            # Save file
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(self.upload_folder, filename)
+            file.save(file_path)
+            
+            # Process file based on its type
+            if file_type == 'xlsx':
+                # For Excel files, we'll use a special preview method
+                preview_data = self._preview_excel(file_path)
+            else:
+                # For other file types, just use the regular process method
+                preview_data = self.process_file(file_path, file_type)
+            
+            return jsonify(preview_data)
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            return jsonify({'error': str(e), 'details': error_details}), 500
+    
+    def _preview_excel(self, file_path):
+        """
+        Process an Excel file and return a preview of its data (first 10 rows)
+        """
+        try:
+            print(f"Previewing Excel file: {file_path}")
+            
+            # Use nrows parameter to check the first few rows to determine header
+            sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10)
+            
+            # Check if columns are unnamed
+            unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
+            
+            # Determine the header row based on the sample
+            header_row = 0
+            if unnamed_count > len(sample_df.columns) / 2:
+                # Try with header in row 1
+                header_row = 1
+                sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10, header=1)
+                unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
+                
+                if unnamed_count > len(sample_df.columns) / 2:
+                    # Try with header in row 2
+                    header_row = 2
+                    sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10, header=2)
+            
+            # Handle potential NaN values first
+            sample_df = sample_df.fillna('')
+            
+            # Convert all numeric columns to string to ensure consistent representation
+            for col in sample_df.select_dtypes(include=['number']).columns:
+                sample_df[col] = sample_df[col].astype(str)
+                
+            # Note: We don't convert to category type here since we're just previewing
+            # and don't need the memory optimization
+                
+            # Convert DataFrame to a standardized format
+            columns = sample_df.columns.tolist()
+            
+            # Convert rows to list of dictionaries
+            rows = sample_df.to_dict(orient='records')
+            
+            # Post-process the rows to ensure consistent string representation
+            for row_dict in rows:
+                for col, value in row_dict.items():
+                    if value == '':
+                        row_dict[col] = None
+                    elif value is not None:
+                        row_dict[col] = str(value)
+            
+            return {
+                'columns': columns,
+                'rows': rows
+            }
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error previewing Excel file: {str(e)}")
+            print(f"Error details: {error_details}")
+            raise Exception(f"Error previewing Excel file: {str(e)}")
     
     def upload_files(self, request):
         """

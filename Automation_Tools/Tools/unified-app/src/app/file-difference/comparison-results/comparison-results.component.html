@@ -39,6 +39,25 @@
     </div>
   </div>
   
+  <div class="legend">
+    <div class="legend-item">
+      <div class="color-box original-value-box"></div>
+      <span>Original Value</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box changed-value-box"></div>
+      <span>Changed Value</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box source-only"></div>
+      <span>Only in Source</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box target-only"></div>
+      <span>Only in Target</span>
+    </div>
+  </div>
+  
   <!-- XML file type view -->
   <div class="table-container" *ngIf="fileType === 'xml'">
     <table class="comparison-table">
@@ -133,28 +152,6 @@
     </table>
   </div>
   
-  <div class="legend">
-    <div class="legend-item">
-      <div class="color-box match"></div>
-      <span>Matching values</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box original-value-box"></div>
-      <span>Original Value</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box changed-value-box"></div>
-      <span>Changed Value</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box source-only"></div>
-      <span>Only in Source</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box target-only"></div>
-      <span>Only in Target</span>
-    </div>
-  </div>
   
   <button class="download-button" (click)="downloadResults()">
     Download Results

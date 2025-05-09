@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileDifferenceService } from '../../services/file-difference.service';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-file-upload',
@@ -10,7 +11,8 @@ import { FileDifferenceService } from '../../services/file-difference.service';
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss']
 })
-export class FileUploadComponent {
+export class FileUploadComponent implements OnInit {
+  @Input() selectedFileType: string = '';
   @Output() comparisonResults = new EventEmitter<any>();
   @Output() loading = new EventEmitter<boolean>();
   @Output() error = new EventEmitter<string>();
@@ -20,24 +22,111 @@ export class FileUploadComponent {
   isLoading = false;
   errorMessage = '';
   
-  allowedFileTypes = ['.csv', '.xml', '.xlsx'];
+  // File selection states
+  sourceFileSelecting = false;
+  targetFileSelecting = false;
   
-  constructor(private fileDifferenceService: FileDifferenceService) {}
+  // File size information
+  sourceFileSize = '';
+  targetFileSize = '';
+  
+  // File preview data
+  sourceFilePreviewData: any = null;
+  targetFilePreviewData: any = null;
+  
+  allowedFileTypes = ['.csv', '.xml', '.xlsx'];
+  fileTypeDescriptions = {
+    '.csv': 'CSV (Comma Separated Values)',
+    '.xml': 'XML (Extensible Markup Language)',
+    '.xlsx': 'Excel Spreadsheet'
+  };
+  
+  constructor(
+    private fileDifferenceService: FileDifferenceService,
+    private http: HttpClient
+  ) {}
+  
+  ngOnInit(): void {
+    // Initialize component
+    if (this.selectedFileType) {
+      console.log(`File type restricted to: ${this.selectedFileType}`);
+    }
+  }
   
   onSourceFileChange(event: Event): void {
+    this.sourceFileSelecting = false;
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.sourceFile = input.files[0];
+      const file = input.files[0];
+      
+      this.sourceFile = file;
+      this.sourceFileSize = this.formatFileSize(file.size);
       this.validateFiles();
+      
+      // If it's an Excel file, load preview
+      if (this.getFileExtension(file.name) === '.xlsx') {
+        this.loadFilePreview(file, 'source');
+      } else {
+        this.sourceFilePreviewData = null;
+      }
     }
   }
   
   onTargetFileChange(event: Event): void {
+    this.targetFileSelecting = false;
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.targetFile = input.files[0];
+      const file = input.files[0];
+      
+      this.targetFile = file;
+      this.targetFileSize = this.formatFileSize(file.size);
       this.validateFiles();
+      
+      // If it's an Excel file, load preview
+      if (this.getFileExtension(file.name) === '.xlsx') {
+        this.loadFilePreview(file, 'target');
+      } else {
+        this.targetFilePreviewData = null;
+      }
     }
+  }
+  
+  loadFilePreview(file: File, fileType: 'source' | 'target'): void {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    this.http.post('http://localhost:5000/api/file-difference/preview', formData)
+      .subscribe({
+        next: (result: any) => {
+          if (fileType === 'source') {
+            this.sourceFilePreviewData = result;
+          } else {
+            this.targetFilePreviewData = result;
+          }
+        },
+        error: (error) => {
+          console.error(`Error loading ${fileType} file preview:`, error);
+          // Don't show error to user, just log it
+        }
+      });
+  }
+  
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+  
+  onSourceFileSelect(): void {
+    this.sourceFileSelecting = true;
+  }
+  
+  onTargetFileSelect(): void {
+    this.targetFileSelecting = true;
   }
   
   validateFiles(): void {
@@ -51,7 +140,14 @@ export class FileUploadComponent {
     const sourceExt = this.getFileExtension(this.sourceFile.name);
     const targetExt = this.getFileExtension(this.targetFile.name);
     
-    if (!this.allowedFileTypes.includes(sourceExt) || !this.allowedFileTypes.includes(targetExt)) {
+    // If a specific file type is selected, enforce it
+    if (this.selectedFileType) {
+      const expectedExt = '.' + this.selectedFileType;
+      if (sourceExt !== expectedExt || targetExt !== expectedExt) {
+        this.errorMessage = `Only ${this.fileTypeDescriptions[expectedExt as keyof typeof this.fileTypeDescriptions]} files are allowed for this comparison.`;
+        return;
+      }
+    } else if (!this.allowedFileTypes.includes(sourceExt) || !this.allowedFileTypes.includes(targetExt)) {
       this.errorMessage = 'Unsupported file type. Please upload CSV, XML, or XLSX files.';
       return;
     }
@@ -65,6 +161,10 @@ export class FileUploadComponent {
   
   getFileExtension(filename: string): string {
     return '.' + filename.split('.').pop()?.toLowerCase() || '';
+  }
+  
+  getFileTypeDescription(extension: string): string {
+    return this.fileTypeDescriptions[extension as keyof typeof this.fileTypeDescriptions] || extension;
   }
   
   compareFiles(): void {

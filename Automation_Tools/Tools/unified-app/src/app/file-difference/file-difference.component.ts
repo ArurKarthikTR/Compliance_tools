@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { FileUploadComponent } from './file-upload/file-upload.component';
 import { ComparisonResultsComponent } from './comparison-results/comparison-results.component';
 import { FileDifferenceService } from '../services/file-difference.service';
@@ -15,9 +16,21 @@ export class FileDifferenceComponent {
   comparisonData: any = null;
   isLoading: boolean = false;
   errorMessage: string = '';
+  selectedFileType: string = ''; // Will be set based on route or user selection
 
-  constructor(private fileDifferenceService: FileDifferenceService) {
+  constructor(
+    private fileDifferenceService: FileDifferenceService,
+    private route: ActivatedRoute
+  ) {
     console.log('FileDifferenceComponent initialized');
+    
+    // Get file type from route data if available
+    this.route.data.subscribe(data => {
+      if (data['fileType']) {
+        this.selectedFileType = data['fileType'];
+        console.log(`File type set from route: ${this.selectedFileType}`);
+      }
+    });
   }
 
   handleComparisonResults(results: any): void {
