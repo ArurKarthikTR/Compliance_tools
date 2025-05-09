@@ -9,7 +9,7 @@
     </div>
     <div class="slide-menu-content">
       <ul class="menu-list">
-        <li><a routerLink="/" class="menu-item">
+        <li><a (click)="navigateAndCloseSidebar('/')" class="menu-item" style="cursor: pointer;">
           <span>Home</span>
           <i class="fas fa-external-link-alt"></i>
         </a></li>
@@ -20,10 +20,10 @@
             <i class="fas" [class.fa-chevron-down]="isExpanded('dataTools')" [class.fa-chevron-right]="!isExpanded('dataTools')"></i>
           </div>
           <ul class="submenu" *ngIf="isExpanded('dataTools')">
-            <li><a routerLink="/date-converter" class="menu-item">
+            <li><a (click)="navigateAndCloseSidebar('/date-converter')" class="menu-item" style="cursor: pointer;">
               <span>Date Converter</span>
             </a></li>
-            <li><a routerLink="/test-data-generator" class="menu-item">
+            <li><a (click)="navigateAndCloseSidebar('/test-data-generator')" class="menu-item" style="cursor: pointer;">
               <span>Test Data Generator</span>
             </a></li>
           </ul>
@@ -35,29 +35,29 @@
             <i class="fas" [class.fa-chevron-down]="isExpanded('fileDifference')" [class.fa-chevron-right]="!isExpanded('fileDifference')"></i>
           </div>
           <ul class="submenu" *ngIf="isExpanded('fileDifference')">
-            <li><a routerLink="/file-difference" class="menu-item">
+            <li><a (click)="navigateAndCloseSidebar('/file-difference')" class="menu-item" style="cursor: pointer;">
               <span>XLSX</span>
             </a></li>
-            <li><a routerLink="/file-difference" class="menu-item">
+            <li><a (click)="navigateAndCloseSidebar('/file-difference')" class="menu-item" style="cursor: pointer;">
               <span>CSV</span>
             </a></li>
-            <li><a routerLink="/file-difference" class="menu-item">
+            <li><a (click)="navigateAndCloseSidebar('/file-difference')" class="menu-item" style="cursor: pointer;">
               <span>XML</span>
             </a></li>
           </ul>
         </li>
         
-        <li><a routerLink="/" class="menu-item">
+        <li><a (click)="navigateAndCloseSidebar('/')" class="menu-item" style="cursor: pointer;">
           <span>GPT</span>
           <i class="fas fa-external-link-alt"></i>
         </a></li>
         
-        <li><a routerLink="/about" class="menu-item">
+        <li><a (click)="navigateAndCloseSidebar('/about')" class="menu-item" style="cursor: pointer;">
           <span>About</span>
           <i class="fas fa-external-link-alt"></i>
         </a></li>
         
-        <li><a href="#" class="menu-item">
+        <li><a (click)="toggleSidebar()" class="menu-item" style="cursor: pointer;">
           <span>Resources</span>
           <i class="fas fa-external-link-alt"></i>
         </a></li>
@@ -68,10 +68,10 @@
             <i class="fas" [class.fa-chevron-down]="isExpanded('more')" [class.fa-chevron-right]="!isExpanded('more')"></i>
           </div>
           <ul class="submenu" *ngIf="isExpanded('more')">
-            <li><a href="#" class="menu-item">
+            <li><a (click)="toggleSidebar()" class="menu-item" style="cursor: pointer;">
               <span>Privacy Statement</span>
             </a></li>
-            <li><a href="#" class="menu-item">
+            <li><a (click)="toggleSidebar()" class="menu-item" style="cursor: pointer;">
               <span>System Status</span>
             </a></li>
           </ul>
@@ -114,7 +114,7 @@
         <ul>
           <!-- My Applications Header -->
           <li class="section-header">
-            <div class="header-title">
+            <div class="header-title" (click)="navigateAndCloseSidebar('/')" style="cursor: pointer;">
               <i class="fas fa-th"></i>
               <span>TOOLS</span>
             </div>
