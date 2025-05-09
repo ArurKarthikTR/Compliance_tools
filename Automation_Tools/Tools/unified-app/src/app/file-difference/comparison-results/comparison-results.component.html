@@ -1,0 +1,166 @@
+<div class="results-header">
+  <h1>File Comparison Results</h1>
+</div>
+
+<div class="back-button-container">
+  <button class="back-button" (click)="goBackToUpload()">← Back to Upload</button>
+</div>
+
+<div class="comparison-results" *ngIf="comparisonData">
+  <h2>Comparison Results - {{ fileType.toUpperCase() }}</h2>
+  
+  <div class="view-controls">
+    <label class="view-control-label">
+      <input type="checkbox" [(ngModel)]="showOnlyDifferences" (change)="toggleDifferencesOnly()">
+      Show only differences
+    </label>
+  </div>
+  
+  <div class="summary-container">
+    <div class="summary-item">
+      <span class="label">Total Rows:</span>
+      <span class="value">{{ summary.totalRows }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Matching Rows:</span>
+      <span class="value">{{ summary.matchingRows }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Differing Rows:</span>
+      <span class="value">{{ summary.differingRows }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Values Changed:</span>
+      <span class="value">{{ tableData.changedValuesCount || 0 }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Values Removed:</span>
+      <span class="value">{{ tableData.removedValuesCount || 0 }}</span>
+    </div>
+  </div>
+  
+  <!-- XML file type view -->
+  <div class="table-container" *ngIf="fileType === 'xml'">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Node Path</th>
+          <th>Source Value</th>
+          <th>Target Value</th>
+          <th class="status-column match">Match</th>
+          <th class="status-column different">Different</th>
+          <th class="status-column source-only">Only in Source</th>
+          <th class="status-column target-only">Only in Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of processedRows">
+          <td class="path-cell">{{ row.path }}</td>
+          <td [ngClass]="{'match': row.status === 'match', 'source-only': row.status === 'source_only'}">
+            <span *ngIf="row.sourceValue !== null && row.sourceValue !== undefined"
+                  [ngClass]="{'correct-value': row.status === 'different', 'wrong-value': row.status === 'different' && row.sourceValue !== row.targetValue}">
+              {{ row.sourceValue }}
+            </span>
+            <span *ngIf="row.sourceValue === null || row.sourceValue === undefined" class="empty-value">(empty)</span>
+          </td>
+          <td [ngClass]="{'match': row.status === 'match', 'target-only': row.status === 'target_only'}">
+            <span *ngIf="row.targetValue !== null && row.targetValue !== undefined"
+                  [ngClass]="{'correct-value': row.status === 'different', 'wrong-value': row.status === 'different' && row.sourceValue !== row.targetValue}">
+              {{ row.targetValue }}
+            </span>
+            <span *ngIf="row.targetValue === null || row.targetValue === undefined" class="empty-value">(empty)</span>
+          </td>
+          <td class="status-cell">
+            <span class="status-indicator" *ngIf="row.status === 'match'">✓</span>
+            <span class="empty-indicator" *ngIf="row.status !== 'match'">-</span>
+          </td>
+          <td class="status-cell">
+            <span class="status-indicator" *ngIf="row.status === 'different'">✓</span>
+            <span class="empty-indicator" *ngIf="row.status !== 'different'">-</span>
+          </td>
+          <td class="status-cell">
+            <span class="status-indicator" *ngIf="row.status === 'source_only'">✓</span>
+            <span class="empty-indicator" *ngIf="row.status !== 'source_only'">-</span>
+          </td>
+          <td class="status-cell">
+            <span class="status-indicator" *ngIf="row.status === 'target_only'">✓</span>
+            <span class="empty-indicator" *ngIf="row.status !== 'target_only'">-</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- CSV/XLSX file type view - Excel-like format -->
+  <div class="table-container excel-view" *ngIf="fileType === 'csv' || fileType === 'xlsx'">
+    <div class="table-info" *ngIf="tableData.rows && tableData.rows.length > 0">
+      <p>Showing {{ filteredRows.length }} of {{ tableData.rows.length }} rows</p>
+    </div>
+    <table class="comparison-table excel-style">
+      <thead>
+        <tr>
+          <th *ngFor="let header of tableData.headers">{{ header }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of filteredRows; let rowIndex = index">
+          <td *ngFor="let cell of row; let colIndex = index" 
+              [ngClass]="{'row-header': colIndex === 0}">
+            <ng-container *ngIf="colIndex === 0">
+              {{ cell }}
+            </ng-container>
+            <ng-container *ngIf="colIndex > 0">
+              <!-- Check if this cell has a difference -->
+              <ng-container *ngIf="tableData.diffValueMap && tableData.headers && tableData.headers[colIndex] && tableData.diffValueMap.has(rowIndex + '-' + tableData.headers[colIndex])">
+                <div class="diff-cell">
+                  <span class="original-value">{{ tableData.diffValueMap.get(rowIndex + '-' + tableData.headers[colIndex])?.original }}</span>
+                  <span class="changed-value">{{ tableData.diffValueMap.get(rowIndex + '-' + tableData.headers[colIndex])?.changed }}</span>
+                </div>
+              </ng-container>
+              
+              <!-- Regular cell without difference -->
+              <ng-container *ngIf="!tableData.diffValueMap || !tableData.headers || !tableData.headers[colIndex] || !tableData.diffValueMap.has(rowIndex + '-' + tableData.headers[colIndex])">
+                <span *ngIf="cell !== null && cell !== undefined"
+                      [ngClass]="tableData.headers && tableData.headers[colIndex] ? getCellClass(rowIndex, tableData.headers[colIndex]) : ''">
+                  {{ cell }}
+                </span>
+                <span *ngIf="cell === null || cell === undefined" class="empty-value">(empty)</span>
+              </ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="legend">
+    <div class="legend-item">
+      <div class="color-box match"></div>
+      <span>Matching values</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box original-value-box"></div>
+      <span>Original Value</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box changed-value-box"></div>
+      <span>Changed Value</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box source-only"></div>
+      <span>Only in Source</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box target-only"></div>
+      <span>Only in Target</span>
+    </div>
+  </div>
+  
+  <button class="download-button" (click)="downloadResults()">
+    Download Results
+  </button>
+</div>
+
+<div class="no-results" *ngIf="!comparisonData">
+  <p>No comparison results to display. Please upload and compare files.</p>
+</div>

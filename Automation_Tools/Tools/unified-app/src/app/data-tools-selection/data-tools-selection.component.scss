@@ -1,0 +1,139 @@
+.data-tools-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: white;
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+}
+
+.tools-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 400;
+    color: white;
+  }
+  
+  .back-button {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    i {
+      font-size: 14px;
+    }
+  }
+}
+
+.tools-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 15px 0;
+  
+  .tool-tile {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    background-color: #ff8c00; // Orange color
+    border-radius: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .expand-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: white;
+      font-size: 14px;
+    }
+    
+    .tool-title {
+      padding: 15px;
+      
+      h2 {
+        font-size: 18px;
+        font-weight: 400;
+        margin: 0;
+        color: white;
+      }
+    }
+    
+    .tool-description {
+      padding: 0 15px 15px;
+      margin-top: auto;
+      
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .tools-grid {
+    justify-content: center;
+    
+    .tool-tile {
+      width: 160px;
+      height: 160px;
+    }
+  }
+  
+  .tools-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    
+    .back-button {
+      align-self: flex-start;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .tools-grid {
+    gap: 15px;
+    
+    .tool-tile {
+      width: 140px;
+      height: 140px;
+      
+      .tool-title h2 {
+        font-size: 14px;
+      }
+    }
+  }
+  
+  .tools-header h1 {
+    font-size: 24px;
+  }
+}

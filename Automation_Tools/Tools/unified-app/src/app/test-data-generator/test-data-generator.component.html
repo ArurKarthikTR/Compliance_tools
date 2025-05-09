@@ -1,0 +1,186 @@
+<div class="container">
+  <h2>Test Data Generator</h2>
+  <p>Configure fields and generate test data for your applications.</p>
+
+  <div class="config-container">
+    <form [formGroup]="configForm">
+      <div class="row-count">
+        <label for="rowCount">Number of Rows:</label>
+        <input 
+          type="number" 
+          id="rowCount" 
+          formControlName="rowCount" 
+          min="1" 
+          max="1000"
+          class="form-control">
+        <small class="form-text" *ngIf="configForm.get('rowCount')?.invalid">
+          Please enter a number between 1 and 1000
+        </small>
+      </div>
+
+      <div class="fields-container" formArrayName="fields">
+        <h3>Fields Configuration</h3>
+        
+        <div *ngFor="let field of fields.controls; let i = index" [formGroupName]="i" class="field-config">
+          <div class="field-header">
+            <h4>Field {{ i + 1 }}</h4>
+            <button type="button" class="btn btn-danger" (click)="removeField(i)" *ngIf="fields.length > 1">
+              Remove
+            </button>
+          </div>
+          
+          <div class="field-inputs">
+            <div class="form-group">
+              <label [for]="'fieldName' + i">Field Name:</label>
+              <input 
+                [id]="'fieldName' + i" 
+                type="text" 
+                formControlName="name" 
+                class="form-control"
+                placeholder="e.g., First Name">
+              <small class="form-text" *ngIf="field.get('name')?.invalid && field.get('name')?.touched">
+                Field name is required
+              </small>
+            </div>
+            
+            <div class="form-group">
+              <label [for]="'fieldType' + i">Field Type:</label>
+              <select 
+                [id]="'fieldType' + i" 
+                formControlName="type" 
+                class="form-control"
+                (change)="onFieldTypeChange(i)">
+                <option *ngFor="let type of fieldTypes" [value]="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group unique-checkbox">
+              <label>
+                <input type="checkbox" formControlName="unique">
+                Generate Unique Values
+              </label>
+            </div>
+          </div>
+          
+          <div class="options-container" formGroupName="options" *ngIf="field.get('type')?.value">
+            <!-- String Options -->
+            <ng-container *ngIf="field.get('type')?.value === 'String'">
+              <div class="form-group">
+                <label [for]="'minLength' + i">Min Length:</label>
+                <input [id]="'minLength' + i" type="number" formControlName="minLength" class="form-control">
+              </div>
+              <div class="form-group">
+                <label [for]="'maxLength' + i">Max Length:</label>
+                <input [id]="'maxLength' + i" type="number" formControlName="maxLength" class="form-control">
+              </div>
+            </ng-container>
+            
+            <!-- Number Options -->
+            <ng-container *ngIf="field.get('type')?.value === 'Number' || field.get('type')?.value === 'Decimal'">
+              <div class="form-group">
+                <label [for]="'min' + i">Min Value:</label>
+                <input [id]="'min' + i" type="number" formControlName="min" class="form-control">
+              </div>
+              <div class="form-group">
+                <label [for]="'max' + i">Max Value:</label>
+                <input [id]="'max' + i" type="number" formControlName="max" class="form-control">
+              </div>
+              <div class="form-group">
+                <label [for]="'precision' + i">Decimal Places:</label>
+                <input [id]="'precision' + i" type="number" formControlName="precision" class="form-control" min="0" max="10">
+              </div>
+            </ng-container>
+            
+            <!-- Date Options -->
+            <ng-container *ngIf="field.get('type')?.value === 'Date'">
+              <div class="form-group">
+                <label [for]="'format' + i">Date Format:</label>
+                <input [id]="'format' + i" type="text" formControlName="format" class="form-control" placeholder="YYYY-MM-DD">
+              </div>
+            </ng-container>
+            
+            <!-- Custom Text Options -->
+            <ng-container *ngIf="field.get('type')?.value === 'CustomText'">
+              <div class="form-group">
+                <label [for]="'pattern' + i">Pattern:</label>
+                <input [id]="'pattern' + i" type="text" formControlName="pattern" class="form-control" placeholder="###-??-****">
+                <small class="form-text">
+                  Use # for digits, ? for uppercase letters, * for alphanumeric
+                </small>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+        
+        <button type="button" class="btn btn-secondary" (click)="addField()">
+          Add Field
+        </button>
+      </div>
+      
+      <div class="actions">
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="generatePreview()" 
+          [disabled]="configForm.invalid || isLoading">
+          {{ isLoading ? 'Generating...' : 'Generate Preview' }}
+        </button>
+        
+        <div class="download-buttons" *ngIf="previewData.length > 0">
+          <button 
+            type="button" 
+            class="btn btn-success" 
+            (click)="downloadData('csv')" 
+            [disabled]="isLoading">
+            Download CSV
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-success" 
+            (click)="downloadData('json')" 
+            [disabled]="isLoading">
+            Download JSON
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-success" 
+            (click)="downloadData('excel')" 
+            [disabled]="isLoading">
+            Download Excel
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success mt-3">
+    {{ successMessage }}
+  </div>
+  
+  <div class="preview-container" *ngIf="previewData.length > 0">
+    <h3>Data Preview</h3>
+    <div class="table-responsive">
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th *ngFor="let header of previewData[0] | keyvalue">{{ header.key }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of previewData.slice(0, 5)">
+            <td *ngFor="let cell of row | keyvalue">{{ cell.value }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="preview-note" *ngIf="previewData.length > 5">
+      Showing 5 of {{ previewData.length }} rows. Download the data to see all rows.
+    </p>
+  </div>
+</div>

@@ -1,0 +1,102 @@
+.landing-page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: white;
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+}
+
+.applications-header {
+  padding: 15px 0;
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 400;
+    color: white;
+  }
+}
+
+.applications-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 15px 0;
+  
+  .app-tile {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    background-color: #ff8c00; // Orange color
+    border-radius: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .expand-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: white;
+      font-size: 14px;
+    }
+    
+    .app-title {
+      margin-top: auto;
+      padding: 15px;
+      
+      h2 {
+        font-size: 18px;
+        font-weight: 400;
+        margin: 0;
+        color: white;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .applications-grid {
+    justify-content: center;
+    
+    .app-tile {
+      width: 160px;
+      height: 160px;
+      
+      .app-title h2 {
+        font-size: 16px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .applications-grid {
+    gap: 15px;
+    
+    .app-tile {
+      width: 140px;
+      height: 140px;
+      
+      .app-title {
+        padding: 10px;
+        
+        h2 {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+  
+  .applications-header h1 {
+    font-size: 24px;
+  }
+}

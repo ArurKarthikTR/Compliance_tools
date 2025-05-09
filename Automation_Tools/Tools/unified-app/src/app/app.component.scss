@@ -1,0 +1,499 @@
+// Main container
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #0e2a47; // Dark blue background
+  position: relative;
+  overflow-x: hidden;
+}
+
+// Slide-out menu
+.slide-menu {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  height: 100vh;
+  background-color: #ffffff;
+  z-index: 1000;
+  transition: left 0.3s ease;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  
+  &.visible {
+    left: 0;
+  }
+  
+  .slide-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    
+    .menu-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .close-menu {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 16px;
+      cursor: pointer;
+      
+      &:hover {
+        color: #000;
+      }
+    }
+  }
+  
+  .slide-menu-content {
+    .menu-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      
+      li {
+        border-bottom: 1px solid #e0e0e0;
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        .menu-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px;
+          color: #333;
+          text-decoration: none;
+          transition: background-color 0.2s;
+          
+          span {
+            flex: 1;
+          }
+          
+          i {
+            color: #999;
+            font-size: 14px;
+          }
+          
+          &:hover {
+            background-color: #f5f5f5;
+          }
+        }
+        
+        &.dropdown {
+          .dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            
+            span {
+              flex: 1;
+            }
+            
+            i {
+              color: #999;
+              font-size: 14px;
+            }
+            
+            &:hover {
+              background-color: #f5f5f5;
+            }
+          }
+          
+          .submenu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background-color: #f9f9f9;
+            
+            li {
+              border-bottom: none;
+              
+              .menu-item {
+                padding: 12px 15px 12px 30px;
+                font-size: 14px;
+              }
+            }
+          }
+          
+          &.expanded {
+            > .dropdown-header {
+              background-color: #f0f0f0;
+            }
+          }
+        }
+        
+        &.dropdown {
+          .dropdown-header {
+            cursor: pointer;
+            
+            i:last-child {
+              margin-left: auto;
+              font-size: 14px;
+              color: #999;
+            }
+          }
+          
+          .submenu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background-color: #f9f9f9;
+            display: block;
+            
+            li {
+              border-bottom: none;
+              
+              .menu-item {
+                padding: 12px 15px 12px 30px;
+                font-size: 14px;
+              }
+            }
+          }
+        }
+        
+        &.menu-button {
+          padding: 15px;
+          
+          .more-apps-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            
+            &:hover {
+              background-color: #e0e0e0;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Overlay for when menu is open
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// Header styles
+.app-header {
+  background-color: #000000; // Black background for header
+  padding: 0.25rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px; // Fixed height for header
+  
+  .left-section {
+    display: flex;
+    align-items: center;
+    
+    .menu-toggle {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      margin-right: 1rem;
+      
+      &:hover {
+        color: #ff8c00; // Orange color
+      }
+    }
+    
+    .logo {
+      display: flex;
+      flex-direction: column;
+      
+      .company-name {
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-bottom: -5px;
+      }
+      
+      h1 {
+        color: #ff8c00; // Orange color
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: bold;
+      }
+    }
+  }
+  
+  .right-section {
+    .main-nav {
+      ul {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        
+        li {
+          margin: 0 0.5rem;
+          
+          a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            &:hover {
+              color: #ff8c00; // Orange color
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Main container with sidebar and content
+.main-container {
+  display: flex;
+  flex: 1;
+  
+  // Sidebar styles
+  .sidebar {
+    width: 200px;
+    background-color: #0e2a47; // Dark blue background
+    color: white;
+    padding-top: 1rem;
+    transition: transform 0.3s ease;
+    
+    .sidebar-nav {
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        
+        li {
+          margin-bottom: 0.5rem;
+          
+          a {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            
+            i {
+              margin-right: 0.75rem;
+              font-size: 1.2rem;
+              width: 20px;
+              text-align: center;
+            }
+            
+            span {
+              font-size: 0.8rem;
+              font-weight: 500;
+            }
+            
+            &:hover {
+              background-color: rgba(255, 255, 255, 0.1);
+            }
+          }
+          
+          &.active > a {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid #ff8c00;
+          }
+          
+          // Section header styles
+          &.section-header {
+            .header-title {
+              display: flex;
+              align-items: center;
+              padding: 0.5rem 1rem;
+              color: white;
+              background-color: rgba(255, 255, 255, 0.05);
+              border-left: 3px solid #ff8c00;
+              
+              i {
+                margin-right: 0.75rem;
+                font-size: 1.2rem;
+                width: 20px;
+                text-align: center;
+              }
+              
+              span {
+                font-size: 0.8rem;
+                font-weight: 500;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Main content area
+  .app-content {
+    flex: 1;
+    background-image: url('https://images.unsplash.com/photo-1522748906645-95d8adfd52c7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: auto;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(14, 42, 71, 0.7); // Semi-transparent dark blue
+      backdrop-filter: blur(5px);
+      z-index: 0;
+    }
+    
+    router-outlet {
+      position: relative;
+      z-index: 1;
+    }
+    
+    // Override styles for tool components
+    ::ng-deep {
+      // This will target the direct children of router-outlet
+      router-outlet + * {
+        position: relative;
+        z-index: 1;
+        
+        // Reset background for tool components
+        .container {
+          background-color: white;
+          border-radius: 8px;
+          margin-top: 20px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+      }
+    }
+  }
+}
+
+// Footer styles
+.app-footer {
+  background-color: #000000; // Black background for footer
+  color: #fff;
+  padding: 0.25rem 2rem;
+  text-align: center;
+  
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+    
+    .sidebar {
+      width: 100%;
+      order: 2;
+      transform: translateY(-100%);
+      position: relative;
+      z-index: 10;
+      
+      &.visible {
+        transform: translateY(0);
+      }
+      
+      .sidebar-nav ul {
+        display: block;
+        padding: 0 1rem;
+        
+        li {
+          margin-bottom: 0.5rem;
+          
+          &.dropdown {
+            .dropdown-header {
+              padding: 0.5rem;
+              
+              i:last-child {
+                font-size: 0.7rem;
+              }
+            }
+            
+            .dropdown-content {
+              padding-left: 1rem;
+            }
+          }
+          
+          a {
+            padding: 0.5rem;
+            
+            i {
+              margin-right: 0.5rem;
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+    
+    .app-content {
+      order: 1;
+    }
+  }
+  
+  .app-header {
+    padding: 0.25rem 0.5rem;
+    
+    .left-section {
+      .logo {
+        h1 {
+          font-size: 1.1rem;
+        }
+      }
+    }
+    
+    .right-section {
+      .main-nav ul li {
+        margin: 0 0.25rem;
+        
+        a {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+}

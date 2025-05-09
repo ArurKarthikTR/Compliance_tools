@@ -1,0 +1,64 @@
+<div class="file-upload-container">
+  <div class="upload-section">
+    <div class="upload-box">
+      <h3>Source File</h3>
+      <div class="file-input-container">
+        <input 
+          type="file" 
+          id="sourceFile" 
+          (change)="onSourceFileChange($event)" 
+          accept=".csv,.xml,.xlsx"
+          [disabled]="isLoading"
+        >
+        <label for="sourceFile" class="file-label">
+          <span *ngIf="!sourceFile">Choose file</span>
+          <span *ngIf="sourceFile">{{ sourceFile.name }}</span>
+        </label>
+      </div>
+    </div>
+    
+    <div class="upload-box">
+      <h3>Target File</h3>
+      <div class="file-input-container">
+        <input 
+          type="file" 
+          id="targetFile" 
+          (change)="onTargetFileChange($event)" 
+          accept=".csv,.xml,.xlsx"
+          [disabled]="isLoading"
+        >
+        <label for="targetFile" class="file-label">
+          <span *ngIf="!targetFile">Choose file</span>
+          <span *ngIf="targetFile">{{ targetFile.name }}</span>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <div class="error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+  
+  <div class="actions">
+    <button 
+      class="compare-button" 
+      (click)="compareFiles()" 
+      [disabled]="!sourceFile || !targetFile || isLoading || !!errorMessage"
+    >
+      <span *ngIf="!isLoading">Compare Files</span>
+      <span *ngIf="isLoading">Comparing...</span>
+    </button>
+    
+    <button 
+      class="reset-button" 
+      (click)="resetForm()" 
+      [disabled]="isLoading"
+    >
+      Reset
+    </button>
+  </div>
+  
+  <div class="supported-formats">
+    <p>Supported file formats: CSV, XML, XLSX</p>
+  </div>
+</div>

@@ -1,0 +1,56 @@
+<div class="container">
+  <h2>Date Converter Tool</h2>
+  <p>This tool allows you to convert dates in CSV files to a specified format.</p>
+
+  <div class="form-container">
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="file">Select CSV File:</label>
+        <input 
+          type="file" 
+          id="file" 
+          (change)="onFileSelected($event)" 
+          accept=".csv"
+          class="form-control">
+        <small class="form-text">Only CSV files are supported</small>
+      </div>
+
+      <div class="form-group">
+        <label for="date">New Date Format (dd-mm-yyyy):</label>
+        <input 
+          type="text" 
+          id="date" 
+          [(ngModel)]="newDate" 
+          name="date" 
+          placeholder="e.g., 31-12-2025"
+          class="form-control">
+        <small class="form-text">Enter the date in dd-mm-yyyy format</small>
+      </div>
+
+      <button 
+        type="submit" 
+        class="btn btn-primary" 
+        [disabled]="isLoading">
+        {{ isLoading ? 'Processing...' : 'Convert Dates' }}
+      </button>
+    </form>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success mt-3">
+    {{ successMessage }}
+  </div>
+
+  <div class="instructions mt-4">
+    <h3>Instructions</h3>
+    <ol>
+      <li>Upload a CSV file containing dates in the format dd/mm/yyyy or dd-mm-yyyy</li>
+      <li>Enter the new date in dd-mm-yyyy format</li>
+      <li>Click "Convert Dates" to process the file</li>
+      <li>The processed file will be automatically downloaded</li>
+    </ol>
+  </div>
+</div>

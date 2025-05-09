@@ -1,0 +1,151 @@
+<div class="app-container">
+  <!-- Slide-out sidebar menu -->
+  <div class="slide-menu" [class.visible]="isSidebarVisible">
+    <div class="slide-menu-header">
+      <div class="menu-title">TOOLS</div>
+      <button class="close-menu" (click)="toggleSidebar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="slide-menu-content">
+      <ul class="menu-list">
+        <li><a routerLink="/" class="menu-item">
+          <span>Home</span>
+          <i class="fas fa-external-link-alt"></i>
+        </a></li>
+        
+        <li class="dropdown" [class.expanded]="isExpanded('dataTools')">
+          <div class="menu-item dropdown-header" (click)="toggleMenu('dataTools')">
+            <span>Data Generation and Manipulation</span>
+            <i class="fas" [class.fa-chevron-down]="isExpanded('dataTools')" [class.fa-chevron-right]="!isExpanded('dataTools')"></i>
+          </div>
+          <ul class="submenu" *ngIf="isExpanded('dataTools')">
+            <li><a routerLink="/date-converter" class="menu-item">
+              <span>Date Converter</span>
+            </a></li>
+            <li><a routerLink="/test-data-generator" class="menu-item">
+              <span>Test Data Generator</span>
+            </a></li>
+          </ul>
+        </li>
+        
+        <li class="dropdown" [class.expanded]="isExpanded('fileDifference')">
+          <div class="menu-item dropdown-header" (click)="toggleMenu('fileDifference')">
+            <span>File Difference</span>
+            <i class="fas" [class.fa-chevron-down]="isExpanded('fileDifference')" [class.fa-chevron-right]="!isExpanded('fileDifference')"></i>
+          </div>
+          <ul class="submenu" *ngIf="isExpanded('fileDifference')">
+            <li><a routerLink="/file-difference" class="menu-item">
+              <span>XLSX</span>
+            </a></li>
+            <li><a routerLink="/file-difference" class="menu-item">
+              <span>CSV</span>
+            </a></li>
+            <li><a routerLink="/file-difference" class="menu-item">
+              <span>XML</span>
+            </a></li>
+          </ul>
+        </li>
+        
+        <li><a routerLink="/" class="menu-item">
+          <span>GPT</span>
+          <i class="fas fa-external-link-alt"></i>
+        </a></li>
+        
+        <li><a routerLink="/about" class="menu-item">
+          <span>About</span>
+          <i class="fas fa-external-link-alt"></i>
+        </a></li>
+        
+        <li><a href="#" class="menu-item">
+          <span>Resources</span>
+          <i class="fas fa-external-link-alt"></i>
+        </a></li>
+        
+        <li class="dropdown" [class.expanded]="isExpanded('more')">
+          <div class="menu-item dropdown-header" (click)="toggleMenu('more')">
+            <span>More</span>
+            <i class="fas" [class.fa-chevron-down]="isExpanded('more')" [class.fa-chevron-right]="!isExpanded('more')"></i>
+          </div>
+          <ul class="submenu" *ngIf="isExpanded('more')">
+            <li><a href="#" class="menu-item">
+              <span>Privacy Statement</span>
+            </a></li>
+            <li><a href="#" class="menu-item">
+              <span>System Status</span>
+            </a></li>
+          </ul>
+        </li>
+        
+        <li class="menu-button">
+          <button class="more-apps-btn">MORE ONESOURCE APPLICATIONS</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- Overlay for when menu is open -->
+  <div class="menu-overlay" [class.visible]="isSidebarVisible" (click)="toggleSidebar()"></div>
+  
+  <header class="app-header">
+    <div class="left-section">
+      <button class="menu-toggle" (click)="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="logo">
+        <div class="company-name">THOMSON REUTERS</div>
+        <h1>ONESOURCE AUTOMATION TOOLS</h1>
+      </div>
+    </div>
+    <div class="right-section">
+      <nav class="main-nav">
+        <ul>
+          <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"><i class="fas fa-home"></i></a></li>
+          <li><a routerLink="/about" routerLinkActive="active"><i class="fas fa-info-circle"></i></a></li>
+          <li><a href="#"><i class="fas fa-lightbulb"></i></a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        <ul>
+          <!-- My Applications Header -->
+          <li class="section-header">
+            <div class="header-title">
+              <i class="fas fa-th"></i>
+              <span>TOOLS</span>
+            </div>
+          </li>
+          
+          
+          <!-- About -->
+          <li routerLinkActive="active">
+            <a routerLink="/about">
+              <i class="fas fa-building"></i>
+              <span>ABOUT</span>
+            </a>
+          </li>
+          
+          <!-- Resources -->
+          <li>
+            <a href="#">
+              <i class="fas fa-lightbulb"></i>
+              <span>RESOURCES</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="app-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <p>&copy; 2025 ONESOURCE. All rights reserved.</p>
+  </footer>
+</div>
