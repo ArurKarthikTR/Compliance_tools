@@ -370,6 +370,65 @@ class FileDifferenceService:
         # Files can have different columns, we'll handle that in the comparison
         return True
 
+    def _create_row_fingerprint(self, row):
+        """
+        Create a simple fingerprint of a row for quick comparison
+        
+        Args:
+            row (dict): Row data
+            
+        Returns:
+            dict: Fingerprint with value lengths and first/last chars
+        """
+        fingerprint = {}
+        for key, value in row.items():
+            if value is None:
+                fingerprint[key] = (0, '', '')
+            else:
+                str_val = str(value)
+                fingerprint[key] = (
+                    len(str_val),
+                    str_val[:1] if str_val else '',
+                    str_val[-1:] if str_val else ''
+                )
+        return fingerprint
+        
+    def _fingerprint_similarity(self, fp1, fp2):
+        """
+        Calculate similarity between two fingerprints
+        
+        Args:
+            fp1 (dict): First fingerprint
+            fp2 (dict): Second fingerprint
+            
+        Returns:
+            float: Similarity score (0-1)
+        """
+        # Get common keys
+        common_keys = set(fp1.keys()) & set(fp2.keys())
+        
+        if not common_keys:
+            return 0
+            
+        matches = 0
+        for key in common_keys:
+            len1, first1, last1 = fp1[key]
+            len2, first2, last2 = fp2[key]
+            
+            # Length similarity
+            len_sim = 1.0 - min(abs(len1 - len2) / max(len1 + len2, 1), 1.0)
+            
+            # First/last char match
+            char_match = 0
+            if first1 == first2:
+                char_match += 0.5
+            if last1 == last2:
+                char_match += 0.5
+                
+            matches += (len_sim * 0.5) + (char_match * 0.5)
+            
+        return matches / len(common_keys)
+        
     def _find_best_match(self, source_row, target_rows, matched_indices):
         """
         Find the best matching row in target_rows for the given source_row
@@ -385,12 +444,36 @@ class FileDifferenceService:
         best_match_idx = None
         best_match_score = 0
         
+        # Create a quick fingerprint of the source row for faster initial filtering
+        source_fingerprint = self._create_row_fingerprint(source_row)
+        
+        # First pass: quick filtering using fingerprints
+        potential_matches = []
         for idx, target_row in enumerate(target_rows):
             if idx in matched_indices:
                 continue
-            
-            # Calculate similarity score
-            score = self._calculate_similarity(source_row, target_row)
+                
+            # Quick check using fingerprint
+            target_fingerprint = self._create_row_fingerprint(target_row)
+            if self._fingerprint_similarity(source_fingerprint, target_fingerprint) > 0.2:
+                potential_matches.append(idx)
+        
+        # If we have too many potential matches, limit to the most promising ones
+        if len(potential_matches) > 50:
+            # Sort by a quick similarity estimate and take top 50
+            potential_matches.sort(
+                key=lambda idx: self._fingerprint_similarity(
+                    source_fingerprint, 
+                    self._create_row_fingerprint(target_rows[idx])
+                ),
+                reverse=True
+            )
+            potential_matches = potential_matches[:50]
+        
+        # Second pass: detailed comparison only on potential matches
+        for idx in potential_matches:
+            # Calculate detailed similarity score
+            score = self._calculate_similarity(source_row, target_rows[idx])
             
             if score > best_match_score:
                 best_match_score = score
@@ -424,6 +507,10 @@ class FileDifferenceService:
         matches = 0
         total_weight = 0
         
+        # First, check for exact matches which are faster to compute
+        exact_match_keys = []
+        non_exact_match_keys = []
+        
         for key in common_keys:
             # Skip None values
             if row1.get(key) is None or row2.get(key) is None:
@@ -433,15 +520,21 @@ class FileDifferenceService:
             val1 = str(row1.get(key)).strip() if row1.get(key) is not None else ""
             val2 = str(row2.get(key)).strip() if row2.get(key) is not None else ""
             
-            # Calculate string similarity
+            # Check for exact matches first (faster)
             if val1 == val2:
-                weight = 1.0
+                exact_match_keys.append(key)
             else:
-                # Check for partial matches
-                similarity = self._string_similarity(val1, val2)
-                weight = similarity
-            
-            matches += weight
+                non_exact_match_keys.append((key, val1, val2))
+        
+        # Process exact matches (weight = 1.0)
+        matches += len(exact_match_keys)
+        total_weight += len(exact_match_keys)
+        
+        # Process non-exact matches (need similarity calculation)
+        for key, val1, val2 in non_exact_match_keys:
+            # For very long values, use a faster approximation
+            similarity = self._string_similarity(val1, val2)
+            matches += similarity
             total_weight += 1
         
         # Calculate similarity score
@@ -461,9 +554,6 @@ class FileDifferenceService:
         Returns:
             float: Similarity score (0-1)
         """
-        # Simple implementation of string similarity
-        # For more sophisticated comparison, consider using libraries like difflib
-        
         # If strings are identical
         if s1 == s2:
             return 1.0
@@ -471,15 +561,47 @@ class FileDifferenceService:
         # If one string is empty
         if not s1 or not s2:
             return 0.0
+            
+        # For long strings, use a faster approximation
+        if len(s1) > 50 or len(s2) > 50:
+            # Compare first and last N characters
+            n = 20
+            prefix_sim = self._quick_similarity(s1[:n], s2[:n])
+            suffix_sim = self._quick_similarity(s1[-n:], s2[-n:])
+            
+            # Length similarity
+            len_diff = abs(len(s1) - len(s2))
+            max_len = max(len(s1), len(s2))
+            len_sim = 1.0 - (len_diff / max_len if max_len > 0 else 0)
+            
+            # Weighted combination
+            return (0.4 * prefix_sim) + (0.4 * suffix_sim) + (0.2 * len_sim)
         
-        # Calculate Levenshtein distance
-        distance = self._levenshtein_distance(s1, s2)
-        max_len = max(len(s1), len(s2))
+        # For shorter strings, use difflib's SequenceMatcher which is faster than Levenshtein
+        # for shorter strings but still accurate
+        import difflib
+        return difflib.SequenceMatcher(None, s1, s2).ratio()
         
-        if max_len == 0:
+    def _quick_similarity(self, s1, s2):
+        """
+        Quick similarity check for string segments
+        
+        Args:
+            s1 (str): First string segment
+            s2 (str): Second string segment
+            
+        Returns:
+            float: Similarity score (0-1)
+        """
+        if s1 == s2:
             return 1.0
             
-        return 1.0 - (distance / max_len)
+        if not s1 or not s2:
+            return 0.0
+            
+        # Count matching characters
+        matches = sum(c1 == c2 for c1, c2 in zip(s1, s2))
+        return matches / max(len(s1), len(s2))
 
     def _levenshtein_distance(self, s1, s2):
         """
