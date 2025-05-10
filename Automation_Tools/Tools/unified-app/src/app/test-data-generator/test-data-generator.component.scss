@@ -5,168 +5,50 @@
 }
 
 h2 {
-  color: #6a1b9a;
-  margin-bottom: 10px;
+  color: #333;
+  margin-bottom: 20px;
 }
 
 h3 {
-  color: #6a1b9a;
+  color: #333;
   margin-bottom: 15px;
+  font-size: 1.5rem;
 }
 
-h4 {
-  color: #6a1b9a;
-  margin: 0;
-}
-
-.config-container {
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 5px;
-  margin-top: 20px;
-}
-
-.row-count {
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+.rows-input {
+  display: flex;
+  align-items: center;
   
   label {
-    display: block;
-    margin-bottom: 5px;
+    margin-right: 10px;
     font-weight: 500;
   }
   
   input {
-    width: 150px;
+    width: 80px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
   }
 }
 
-.fields-container {
-  margin-bottom: 20px;
-}
-
-.field-config {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 15px;
-}
-
-.field-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.field-inputs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 15px;
-  
-  .form-group {
-    flex: 1;
-    min-width: 200px;
-  }
-  
-  .unique-checkbox {
-    display: flex;
-    align-items: center;
-    min-width: 150px;
-    
-    input {
-      margin-right: 8px;
-    }
-  }
-}
-
-.options-container {
-  background-color: #f5f5f5;
-  padding: 15px;
-  border-radius: 5px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  
-  .form-group {
-    flex: 1;
-    min-width: 150px;
-  }
-}
-
-.form-group {
-  margin-bottom: 10px;
-  
-  label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-  }
-}
-
-.form-control {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-}
-
-.form-text {
-  display: block;
-  margin-top: 5px;
-  color: #6c757d;
-  font-size: 0.875rem;
-}
-
-.btn {
+.generate-btn {
+  background-color: #4CAF50;
+  color: white;
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 10px;
-}
-
-.btn-primary {
-  background-color: #6a1b9a;
-  color: white;
   
   &:hover {
-    background-color: darken(#6a1b9a, 10%);
-  }
-  
-  &:disabled {
-    background-color: #b39ddb;
-    cursor: not-allowed;
-  }
-}
-
-.btn-secondary {
-  background-color: #757575;
-  color: white;
-  
-  &:hover {
-    background-color: darken(#757575, 10%);
-  }
-}
-
-.btn-danger {
-  background-color: #f44336;
-  color: white;
-  
-  &:hover {
-    background-color: darken(#f44336, 10%);
-  }
-}
-
-.btn-success {
-  background-color: #4caf50;
-  color: white;
-  
-  &:hover {
-    background-color: darken(#4caf50, 10%);
+    background-color: darken(#4CAF50, 10%);
   }
   
   &:disabled {
@@ -175,18 +57,199 @@ h4 {
   }
 }
 
-.actions {
-  margin-top: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: center;
+.no-fields-message {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 20px;
 }
 
-.download-buttons {
+.fields-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.field-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.field-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.field-name {
+  font-weight: 500;
+}
+
+.field-actions {
+  display: flex;
+  align-items: center;
+  
+  .field-type {
+    margin-right: 15px;
+    color: #666;
+  }
+}
+
+.field-buttons {
+  display: flex;
+  
+  button {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    cursor: pointer;
+  }
+}
+
+.btn-edit {
+  background-color: #64B5F6;
+  color: white;
+  
+  &:hover {
+    background-color: darken(#64B5F6, 10%);
+  }
+}
+
+.btn-remove {
+  background-color: #EF5350;
+  color: white;
+  
+  &:hover {
+    background-color: darken(#EF5350, 10%);
+  }
+}
+
+.btn-duplicate {
+  background: none;
+  border: none;
+  color: #2196F3;
+  cursor: pointer;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.btn-add-field {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 30px;
+  background-color: #000;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  
+  &:hover {
+    background-color: #333;
+  }
+}
+
+.add-field-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.add-field-form {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
+  h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      
+      &:focus {
+        outline: none;
+        border-color: #2196F3;
+      }
+    }
+  }
+  
+  .radio-options {
+    display: flex;
+    gap: 20px;
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+      
+      input[type="radio"] {
+        margin-right: 5px;
+      }
+    }
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .btn-cancel {
+      background-color: #f5f5f5;
+      color: #333;
+      
+      &:hover {
+        background-color: #e0e0e0;
+      }
+    }
+    
+    .btn-save {
+      background-color: #4CAF50;
+      color: white;
+      
+      &:hover {
+        background-color: darken(#4CAF50, 10%);
+      }
+    }
+  }
 }
 
 .alert {
@@ -209,9 +272,8 @@ h4 {
 
 .preview-container {
   margin-top: 30px;
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 5px;
+  padding: 20px 0;
+  border-top: 1px solid #eee;
 }
 
 .table-responsive {
@@ -221,34 +283,78 @@ h4 {
 .preview-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 15px;
   
   th, td {
     padding: 10px;
     text-align: left;
     border-bottom: 1px solid #dee2e6;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
   }
   
   th {
-    background-color: #e9ecef;
     font-weight: 600;
-  }
-  
-  tr:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-  
-  tr:hover {
-    background-color: #e9ecef;
   }
 }
 
-.preview-note {
-  margin-top: 10px;
-  font-style: italic;
-  color: #6c757d;
+.download-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.download-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.btn-download-csv {
+  background-color: #4CAF50;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: darken(#4CAF50, 10%);
+  }
+}
+
+.btn-download-json {
+  background-color: #2196F3;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: darken(#2196F3, 10%);
+  }
+}
+
+.btn-download-excel {
+  background-color: #1B5E20;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: darken(#1B5E20, 10%);
+  }
+}
+
+.btn-download-xml {
+  background-color: #FF5722;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: darken(#FF5722, 10%);
+  }
 }

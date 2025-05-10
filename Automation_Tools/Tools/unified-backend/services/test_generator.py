@@ -184,6 +184,60 @@ class TestGeneratorService:
             )
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+            
+    def download_xml(self, request_json):
+        """
+        Generate mock data and return it as an XML file
+        """
+        try:
+            # Check if Faker is available
+            if self.fake is None:
+                return jsonify({"error": "Faker module is not installed. Please install it with 'pip install faker'"}), 500
+            
+            fields = request_json.get('fields', [])
+            row_count = request_json.get('rowCount', 10)
+            
+            # Validate input
+            if not fields:
+                return jsonify({"error": "No fields provided"}), 400
+            
+            if not isinstance(row_count, int) or row_count <= 0 or row_count > 1000:
+                return jsonify({"error": "Invalid row count. Must be between 1 and 1000"}), 400
+            
+            # Generate data
+            generated_data = self._generate_mock_data(fields, row_count)
+            
+            # Generate a unique filename
+            filename = f"test-data-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.xml"
+            filepath = os.path.join(self.download_folder, filename)
+            
+            # Create XML content
+            xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n<data>\n'
+            
+            for row in generated_data:
+                xml_content += '  <row>\n'
+                for key, value in row.items():
+                    # Escape special characters in XML
+                    if isinstance(value, str):
+                        value = value.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&apos;')
+                    xml_content += f'    <{key}>{value}</{key}>\n'
+                xml_content += '  </row>\n'
+            
+            xml_content += '</data>'
+            
+            # Save to file
+            with open(filepath, 'w', encoding='utf-8') as xmlfile:
+                xmlfile.write(xml_content)
+            
+            # Create response
+            return send_from_directory(
+                self.download_folder, 
+                filename, 
+                as_attachment=True,
+                mimetype='application/xml'
+            )
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
     
     def _generate_mock_data(self, fields, row_count):
         """
@@ -219,11 +273,16 @@ class TestGeneratorService:
                 
                 # Handle unique constraint
                 if is_unique:
-                    # Try up to 10 times to generate a unique value
+                    # Try up to 100 times to generate a unique value
                     attempts = 0
-                    while str(value) in unique_values[field_id] and attempts < 10:
+                    max_attempts = 100
+                    while str(value) in unique_values[field_id] and attempts < max_attempts:
                         value = self._generate_field_value(field_type, field_options)
                         attempts += 1
+                    
+                    # If we couldn't generate a unique value after max attempts, add a suffix to make it unique
+                    if attempts >= max_attempts:
+                        value = f"{value}_{len(unique_values[field_id])}"
                     
                     unique_values[field_id].add(str(value))
                 
@@ -244,7 +303,33 @@ class TestGeneratorService:
         Returns:
             The generated value
         """
-        if field_type == 'text':
+        # Handle Angular component field types
+        if field_type == 'Name':
+            return self._generate_name(options)
+        elif field_type == 'Email':
+            return self._generate_email(options)
+        elif field_type == 'Phone':
+            return self._generate_phone(options)
+        elif field_type == 'Address':
+            return self._generate_address(options)
+        elif field_type == 'Country':
+            return self._generate_country(options)
+        elif field_type == 'String':
+            return self._generate_text(options)
+        elif field_type == 'Number':
+            return self._generate_number(options)
+        elif field_type == 'Float':
+            options['decimal'] = True
+            return self._generate_number(options)
+        elif field_type == 'Decimal':
+            options['decimal'] = True
+            return self._generate_number(options)
+        elif field_type == 'Boolean':
+            return self._generate_boolean(options)
+        elif field_type == 'Date':
+            return self._generate_date(options)
+        # Legacy field types
+        elif field_type == 'text':
             return self._generate_text(options)
         elif field_type == 'number':
             return self._generate_number(options)
@@ -263,7 +348,7 @@ class TestGeneratorService:
         elif field_type == 'select':
             return self._generate_select(options)
         else:
-            return "Unsupported field type"
+            return f"Unsupported field type: {field_type}"
     
     def _generate_text(self, options):
         """Generate text data"""
@@ -281,25 +366,67 @@ class TestGeneratorService:
         min_value = options.get('min', 0)
         max_value = options.get('max', 100)
         decimal = options.get('decimal', False)
+        length = options.get('length')
         
         if decimal:
             return round(random.uniform(min_value, max_value), 2)
+        elif length:
+            # Generate a number with specific length
+            length = int(length)
+            if length <= 0:
+                return random.randint(min_value, max_value)
+            
+            # Generate a random number with exactly 'length' digits
+            if length == 1:
+                return random.randint(0, 9)
+            else:
+                min_length_value = 10 ** (length - 1)
+                max_length_value = (10 ** length) - 1
+                
+                # Respect min and max constraints
+                actual_min = max(min_value, min_length_value)
+                actual_max = min(max_value, max_length_value)
+                
+                # If constraints conflict, prioritize length
+                if actual_min > actual_max:
+                    actual_min = min_length_value
+                    actual_max = max_length_value
+                
+                return random.randint(actual_min, actual_max)
         else:
             return random.randint(min_value, max_value)
     
     def _generate_date(self, options):
         """Generate date data"""
-        start_date = options.get('startDate', '2020-01-01')
-        end_date = options.get('endDate', '2025-12-31')
+        # Default dates if not provided or if there's an error parsing
+        default_start = datetime.datetime(2020, 1, 1)
+        default_end = datetime.datetime(2025, 12, 31)
+        
+        # Get date strings from options
+        start_date_str = options.get('startDate', '2020-01-01')
+        end_date_str = options.get('endDate', '2025-12-31')
+        
+        # Try to parse the dates
+        try:
+            start = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
+        except (ValueError, TypeError):
+            start = default_start
+            
+        try:
+            end = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
+        except (ValueError, TypeError):
+            end = default_end
+            
+        # Ensure end date is not before start date
+        if end < start:
+            end = start + datetime.timedelta(days=365)  # Default to 1 year range
         
         if self.fake:
-            return self.fake.date_between(start_date=start_date, end_date=end_date).strftime('%Y-%m-%d')
+            return self.fake.date_between(start_date=start, end_date=end).strftime('%Y-%m-%d')
         else:
             # Simple random date between start and end
-            start = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-            end = datetime.datetime.strptime(end_date, '%Y-%m-%d')
             delta = end - start
-            random_days = random.randint(0, delta.days)
+            random_days = random.randint(0, max(0, delta.days))
             return (start + datetime.timedelta(days=random_days)).strftime('%Y-%m-%d')
     
     def _generate_boolean(self, options):
@@ -358,3 +485,116 @@ class TestGeneratorService:
             return random.choice(values)
         else:
             return "No options available"
+            
+    def _generate_first_name(self, options):
+        """Generate first name data"""
+        if self.fake:
+            return self.fake.first_name()
+        else:
+            first_names = ['John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 
+                          'Robert', 'Jennifer', 'William', 'Elizabeth', 'Richard', 'Susan',
+                          'Joseph', 'Jessica', 'Thomas', 'Karen', 'Charles', 'Nancy',
+                          'Christopher', 'Lisa', 'Daniel', 'Margaret', 'Matthew', 'Betty']
+            return random.choice(first_names)
+    
+    def _generate_last_name(self, options):
+        """Generate last name data"""
+        if self.fake:
+            return self.fake.last_name()
+        else:
+            last_names = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 
+                         'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas',
+                         'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Garcia',
+                         'Martinez', 'Robinson', 'Clark', 'Rodriguez', 'Lewis', 'Lee',
+                         'Walker', 'Hall', 'Allen', 'Young', 'Hernandez', 'King']
+            return random.choice(last_names)
+    
+    def _generate_city(self, options):
+        """Generate city data"""
+        if self.fake:
+            return self.fake.city()
+        else:
+            cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 
+                     'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose',
+                     'Austin', 'Jacksonville', 'Fort Worth', 'Columbus', 'San Francisco',
+                     'Charlotte', 'Indianapolis', 'Seattle', 'Denver', 'Washington',
+                     'Boston', 'El Paso', 'Nashville', 'Detroit', 'Portland']
+            return random.choice(cities)
+    
+    def _generate_country(self, options):
+        """Generate country data"""
+        if self.fake:
+            return self.fake.country()
+        else:
+            countries = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 
+                        'France', 'Japan', 'Italy', 'Spain', 'Mexico', 'Brazil', 'India',
+                        'China', 'Russia', 'South Korea', 'Netherlands', 'Sweden', 'Switzerland',
+                        'Norway', 'Denmark', 'Finland', 'Ireland', 'New Zealand', 'Singapore']
+            return random.choice(countries)
+    
+    def _generate_postal_code(self, options):
+        """Generate postal code data"""
+        if self.fake:
+            return self.fake.postcode()
+        else:
+            return f"{random.randint(10000, 99999)}"
+    
+    def _generate_company(self, options):
+        """Generate company name data"""
+        if self.fake:
+            return self.fake.company()
+        else:
+            prefixes = ['Tech', 'Global', 'Advanced', 'United', 'National', 'International', 
+                       'Digital', 'Future', 'Modern', 'Smart', 'Innovative', 'Strategic']
+            suffixes = ['Systems', 'Solutions', 'Technologies', 'Industries', 'Group', 'Corp', 
+                       'Inc', 'LLC', 'Enterprises', 'Services', 'Networks', 'Associates']
+            middle = ['Data', 'Software', 'Consulting', 'Communications', 'Media', 'Energy',
+                     'Financial', 'Health', 'Security', 'Logistics', 'Research', 'Development']
+            
+            company_type = random.choice([1, 2, 3])
+            if company_type == 1:
+                return f"{random.choice(prefixes)} {random.choice(middle)}"
+            elif company_type == 2:
+                return f"{random.choice(prefixes)} {random.choice(suffixes)}"
+            else:
+                return f"{random.choice(prefixes)} {random.choice(middle)} {random.choice(suffixes)}"
+    
+    def _generate_job_title(self, options):
+        """Generate job title data"""
+        if self.fake:
+            return self.fake.job()
+        else:
+            levels = ['Junior', 'Senior', 'Lead', 'Principal', 'Chief', 'Head of', 'Director of', 
+                     'VP of', 'Assistant', 'Associate']
+            roles = ['Software Engineer', 'Developer', 'Architect', 'Designer', 'Analyst', 
+                    'Manager', 'Consultant', 'Specialist', 'Administrator', 'Coordinator',
+                    'Technician', 'Officer', 'Representative', 'Supervisor', 'Strategist']
+            departments = ['Engineering', 'Development', 'Product', 'Marketing', 'Sales', 
+                          'Operations', 'Finance', 'HR', 'Support', 'Research', 'Data', 'IT']
+            
+            job_type = random.choice([1, 2, 3])
+            if job_type == 1:
+                return f"{random.choice(levels)} {random.choice(roles)}"
+            elif job_type == 2:
+                return f"{random.choice(roles)}"
+            else:
+                return f"{random.choice(departments)} {random.choice(roles)}"
+    
+    def _generate_custom_text(self, options):
+        """Generate custom text based on pattern"""
+        pattern = options.get('pattern', '')
+        if not pattern:
+            return self._generate_text(options)
+        
+        result = ''
+        for char in pattern:
+            if char == '#':
+                result += random.choice(string.digits)
+            elif char == '?':
+                result += random.choice(string.ascii_uppercase)
+            elif char == '*':
+                result += random.choice(string.ascii_letters + string.digits)
+            else:
+                result += char
+        
+        return result
