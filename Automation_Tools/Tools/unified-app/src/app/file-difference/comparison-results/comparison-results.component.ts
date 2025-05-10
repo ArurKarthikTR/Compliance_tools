@@ -332,24 +332,73 @@ export class ComparisonResultsComponent implements OnChanges {
     
     if (!status) return '';
     
+    let classNames = '';
+    
+    // Add status-based class
     switch (status) {
       case 'match':
-        return 'match-value';
+        classNames = 'match-value';
+        break;
       case 'different':
         // Check if we have both source and target values
         const sourceKey = `${rowIndex}-${column}-source`;
         const targetKey = `${rowIndex}-${column}-target`;
         if (this.tableData.diffMap?.has(sourceKey) && this.tableData.diffMap?.has(targetKey)) {
-          return 'different-value';
+          classNames = 'different-value';
+        } else {
+          classNames = 'correct-value';
         }
-        return 'correct-value';
+        break;
       case 'source_only':
-        return 'source-only-value';
+        classNames = 'source-only-value';
+        break;
       case 'target_only':
-        return 'target-only-value';
-      default:
-        return '';
+        classNames = 'target-only-value';
+        break;
     }
+    
+    // Add content-type class
+    const contentClass = this.getCellContentClass(rowIndex, column);
+    if (contentClass) {
+      classNames += ' ' + contentClass;
+    }
+    
+    return classNames;
+  }
+  
+  getCellContentClass(rowIndex: number, column: string): string {
+    // Get the cell value
+    const row = this.filteredRows[rowIndex];
+    if (!row) return '';
+    
+    const colIndex = this.tableData.headers.indexOf(column);
+    if (colIndex < 0) return '';
+    
+    const value = row[colIndex];
+    
+    // Check if it's a numeric value
+    if (value === null || value === undefined) return '';
+    
+    const strValue = String(value).trim();
+    
+    // Check if it's a number (including decimal points)
+    if (/^-?\d+(\.\d+)?$/.test(strValue)) {
+      return 'numeric-content';
+    }
+    
+    // Check if it's a date format
+    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(strValue) || 
+        /^\d{2,4}[-/]\d{1,2}[-/]\d{1,2}$/.test(strValue)) {
+      return 'numeric-content';
+    }
+    
+    // For longer text content
+    if (strValue.length > 10 || strValue.includes(' ')) {
+      return 'text-content';
+    }
+    
+    // Default to numeric for short values without spaces
+    return 'numeric-content';
   }
   
   downloadResults(): void {
