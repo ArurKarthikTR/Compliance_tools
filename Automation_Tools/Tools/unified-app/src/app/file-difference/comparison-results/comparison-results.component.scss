@@ -116,6 +116,108 @@
   border-radius: 8px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
   
+  .color-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 0 0 15px 0;
+    padding: 12px 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 4px;
+      
+      .color-box {
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        border-radius: 3px;
+        
+        &.changed-value-box {
+          background-color: #dc3545;
+          box-shadow: 0 1px 3px rgba(220, 53, 69, 0.3);
+        }
+        
+        &.source-only-box {
+          background-color: #0076CE;
+          box-shadow: 0 1px 3px rgba(0, 118, 206, 0.3);
+        }
+        
+        &.target-only-box {
+          background-color: #666666;
+          box-shadow: 0 1px 3px rgba(102, 102, 102, 0.3);
+        }
+        
+        &.match-value-box {
+          background-color: #FF8200;
+          box-shadow: 0 1px 3px rgba(255, 130, 0, 0.3);
+        }
+      }
+      
+      span {
+        font-size: 13px;
+        font-weight: 500;
+        color: #495057;
+      }
+    }
+  }
+  
+  .xml-comparison-header {
+    background: linear-gradient(to right, #f0f8ff, #e6f2ff);
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 2px solid #ddd;
+    
+    h3 {
+      margin: 0 0 5px 0;
+      color: #333;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+      font-style: italic;
+    }
+    
+    .xml-format-note {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: #f8f9fa;
+      border-left: 3px solid #0076CE;
+      border-radius: 4px;
+      
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: #333;
+        font-style: normal;
+      }
+      
+      strong {
+        font-weight: 600;
+        color: #222;
+      }
+      
+      .code {
+        font-family: 'Consolas', 'Monaco', monospace;
+        background-color: #f0f0f0;
+        padding: 2px 4px;
+        border-radius: 3px;
+        color: #0076CE;
+        font-size: 12px;
+        margin: 0 2px;
+      }
+    }
+  }
+  
   &.excel-view {
     // Add a horizontal scrollbar for wide tables
     overflow-x: auto;
@@ -147,6 +249,55 @@
       &:nth-child(3), &:nth-child(4) {
         width: 35%;
       }
+    }
+  }
+  
+  &.simplified {
+    width: 100%;
+    border-collapse: collapse;
+    
+    th, td {
+      padding: 10px 15px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f8f9fa;
+      color: #333;
+      font-weight: 600;
+      border-bottom: 2px solid #ddd;
+    }
+    
+    td {
+      border-bottom: 1px solid #eee;
+    }
+    
+    tr.row-divider {
+      border-top: 5px solid #f0f0f0;
+    }
+    
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+    
+    .path-cell {
+      width: 30%;
+      
+      .node-path {
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 13px;
+        color: #444;
+        background-color: #f8f9fa;
+        padding: 6px 10px;
+        border-radius: 4px;
+        border-left: 3px solid #0076CE;
+        overflow-wrap: break-word;
+        word-break: break-all;
+      }
+    }
+    
+    td:nth-child(2), td:nth-child(3) {
+      width: 35%;
     }
   }
   
@@ -233,6 +384,8 @@
     
     .match-value {
       color: #333;
+      // For Excel-style tables, keep normal styling for match values
+      // Orange is only for XML comparisons
     }
     
     .different-value {
@@ -406,6 +559,56 @@
       font-weight: 600;
     }
     
+    .source-diff-value {
+      color: inherit; /* No color for source values */
+      font-weight: normal;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: transparent; /* No background */
+      border: none; /* No border */
+      display: inline-block;
+    }
+    
+    .target-diff-value {
+      color: #dc3545; /* Red color for changed values in target */
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: rgba(220, 53, 69, 0.2); /* Light red background */
+      border: 1px solid rgba(220, 53, 69, 0.4); /* Red border */
+      display: inline-block;
+    }
+    
+    .source-only {
+      color: #0076CE; /* Blue color for source-only values */
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: rgba(0, 118, 206, 0.1);
+      border: 1px solid rgba(0, 118, 206, 0.3);
+      display: inline-block;
+    }
+    
+    .target-only {
+      color: #6c757d; /* Grey color for target-only values */
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: rgba(108, 117, 125, 0.1);
+      border: 1px solid rgba(108, 117, 125, 0.3);
+      display: inline-block;
+    }
+    
+    .match-value {
+      color: #FF8200; /* Changed back to orange */
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      background-color: rgba(255, 130, 0, 0.1); /* Light orange background */
+      border: 1px solid rgba(255, 130, 0, 0.4); /* Orange border */
+    }
+    
     .diff-cell {
       display: flex;
       flex-direction: column;
@@ -442,8 +645,8 @@
     }
     
     .changed-value {
-      background-color: rgba(40, 167, 69, 0.15);
-      color: #28a745;
+      background-color: rgba(220, 53, 69, 0.15); /* Changed from green to red */
+      color: #dc3545; /* Changed from green to red */
       padding: 6px 8px;
       font-weight: 600;
       display: block;
@@ -560,16 +763,16 @@
 .summary-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 30px;
+  gap: 8px;
+  margin-bottom: 20px;
   
   .summary-item {
     background-color: #ffffff;
-    padding: 18px 20px;
-    border-radius: 8px;
+    padding: 12px 15px;
+    border-radius: 6px;
     border: 1px solid #e9ecef;
     flex: 1;
-    min-width: 150px;
+    min-width: 120px;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
     
@@ -619,6 +822,58 @@
   }
 }
 
+.legend-horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 0 0 15px 0;
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    
+    .color-box {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border-radius: 3px;
+      
+      &.original-value-box {
+        background-color: #dc3545; /* Red for source values */
+        box-shadow: 0 1px 3px rgba(220, 53, 69, 0.3);
+      }
+      
+      &.changed-value-box {
+        background-color: #dc3545; /* Changed from green to red */
+        box-shadow: 0 1px 3px rgba(220, 53, 69, 0.3); /* Changed from green to red */
+      }
+      
+      &.source-only-box {
+        background-color: #0076CE; /* Blue for source-only values */
+        box-shadow: 0 1px 3px rgba(0, 118, 206, 0.3);
+      }
+      
+      &.target-only-box {
+        background-color: #666666; /* Grey for target-only values */
+        box-shadow: 0 1px 3px rgba(102, 102, 102, 0.3);
+      }
+    }
+    
+    span {
+      font-size: 13px;
+      font-weight: 500;
+      color: #495057;
+    }
+  }
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -662,8 +917,8 @@
       }
       
       &.changed-value-box {
-        background-color: #28a745;
-        box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
+        background-color: #dc3545; /* Changed from green to red */
+        box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3); /* Changed from green to red */
       }
       
       &.source-only {
@@ -674,6 +929,11 @@
       &.target-only {
         background-color: #666666;
         box-shadow: 0 2px 5px rgba(102, 102, 102, 0.3);
+      }
+      
+      &.match-value {
+        background-color: #FF8200; /* Orange for matching values */
+        box-shadow: 0 2px 5px rgba(255, 130, 0, 0.3);
       }
     }
     

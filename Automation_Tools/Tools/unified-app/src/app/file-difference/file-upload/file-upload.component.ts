@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileDifferenceService } from '../../services/file-difference.service';
@@ -11,11 +11,20 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss']
 })
-export class FileUploadComponent implements OnInit {
+export class FileUploadComponent implements OnInit, OnChanges {
   @Input() selectedFileType: string = '';
+  @Input() inputSourceFile: File | null = null;
+  @Input() inputTargetFile: File | null = null;
+  @Input() inputSourceFileSize: string = '';
+  @Input() inputTargetFileSize: string = '';
+  @Input() inputSourceFilePreviewData: any = null;
+  @Input() inputTargetFilePreviewData: any = null;
+  @Input() inputSourceFileContent: string | null = null;
+  @Input() inputTargetFileContent: string | null = null;
   @Output() comparisonResults = new EventEmitter<any>();
   @Output() loading = new EventEmitter<boolean>();
   @Output() error = new EventEmitter<string>();
+  @Output() fileInfoUpdated = new EventEmitter<any>();
   
   sourceFile: File | null = null;
   targetFile: File | null = null;
@@ -34,6 +43,10 @@ export class FileUploadComponent implements OnInit {
   sourceFilePreviewData: any = null;
   targetFilePreviewData: any = null;
   
+  // XML file content for preview
+  sourceFileContent: string | null = null;
+  targetFileContent: string | null = null;
+  
   allowedFileTypes = ['.csv', '.xml', '.xlsx'];
   fileTypeDescriptions = {
     '.csv': 'CSV (Comma Separated Values)',
@@ -51,6 +64,39 @@ export class FileUploadComponent implements OnInit {
     if (this.selectedFileType) {
       console.log(`File type restricted to: ${this.selectedFileType}`);
     }
+    
+    // Apply input values if available
+    this.initializeFromInputs();
+  }
+  
+  ngOnChanges(changes: SimpleChanges): void {
+    // Apply input values when they change
+    if (changes['inputSourceFile'] || changes['inputTargetFile']) {
+      this.initializeFromInputs();
+    }
+  }
+  
+  initializeFromInputs(): void {
+    // Initialize from input properties if available
+    if (this.inputSourceFile) {
+      this.sourceFile = this.inputSourceFile;
+      this.sourceFileSize = this.inputSourceFileSize || this.formatFileSize(this.sourceFile.size);
+      this.sourceFilePreviewData = this.inputSourceFilePreviewData;
+      this.sourceFileContent = this.inputSourceFileContent;
+      
+      // Validate after setting files
+      this.validateFiles();
+    }
+    
+    if (this.inputTargetFile) {
+      this.targetFile = this.inputTargetFile;
+      this.targetFileSize = this.inputTargetFileSize || this.formatFileSize(this.targetFile.size);
+      this.targetFilePreviewData = this.inputTargetFilePreviewData;
+      this.targetFileContent = this.inputTargetFileContent;
+      
+      // Validate after setting files
+      this.validateFiles();
+    }
   }
   
   onSourceFileChange(event: Event): void {
@@ -66,8 +112,12 @@ export class FileUploadComponent implements OnInit {
       // If it's an Excel file, load preview
       if (this.getFileExtension(file.name) === '.xlsx') {
         this.loadFilePreview(file, 'source');
+      } else if (this.getFileExtension(file.name) === '.xml') {
+        this.readXmlFile(file, 'source');
       } else {
         this.sourceFilePreviewData = null;
+        this.sourceFileContent = null;
+        // Don't emit file info for non-XML files
       }
     }
   }
@@ -85,8 +135,12 @@ export class FileUploadComponent implements OnInit {
       // If it's an Excel file, load preview
       if (this.getFileExtension(file.name) === '.xlsx') {
         this.loadFilePreview(file, 'target');
+      } else if (this.getFileExtension(file.name) === '.xml') {
+        this.readXmlFile(file, 'target');
       } else {
         this.targetFilePreviewData = null;
+        this.targetFileContent = null;
+        // Don't emit file info for non-XML files
       }
     }
   }
@@ -103,6 +157,8 @@ export class FileUploadComponent implements OnInit {
           } else {
             this.targetFilePreviewData = result;
           }
+          // Emit file information when Excel preview is loaded
+          this.emitFileInfo();
         },
         error: (error) => {
           console.error(`Error loading ${fileType} file preview:`, error);
@@ -207,10 +263,55 @@ export class FileUploadComponent implements OnInit {
       });
   }
   
+  // Read XML file content for preview
+  readXmlFile(file: File, fileType: 'source' | 'target'): void {
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const content = e.target.result;
+      if (fileType === 'source') {
+        this.sourceFileContent = content;
+      } else {
+        this.targetFileContent = content;
+      }
+      
+      // Emit file information when XML content is loaded
+      this.emitFileInfo();
+    };
+    reader.readAsText(file);
+  }
+  
+  emitFileInfo(): void {
+    // Only emit when we have at least one file
+    if (this.sourceFile || this.targetFile) {
+      const fileInfo = {
+        sourceFile: this.sourceFile,
+        targetFile: this.targetFile,
+        sourceFileSize: this.sourceFileSize,
+        targetFileSize: this.targetFileSize,
+        sourceFilePreviewData: this.sourceFilePreviewData,
+        targetFilePreviewData: this.targetFilePreviewData,
+        sourceFileContent: this.sourceFileContent,
+        targetFileContent: this.targetFileContent
+      };
+      console.log('Emitting file information:', fileInfo);
+      
+      // Log whether XML content is included in the emitted info
+      if (this.sourceFileContent || this.targetFileContent) {
+        console.log('XML content included in emitted file info');
+      }
+      
+      this.fileInfoUpdated.emit(fileInfo);
+    }
+  }
+  
   resetForm(): void {
     this.sourceFile = null;
     this.targetFile = null;
     this.errorMessage = '';
+    this.sourceFileContent = null;
+    this.targetFileContent = null;
+    this.sourceFilePreviewData = null;
+    this.targetFilePreviewData = null;
     this.comparisonResults.emit(null);
   }
 }

@@ -153,72 +153,79 @@ class FileDifferenceService:
             tree = ET.parse(file_path)
             root = tree.getroot()
             
-            # Extract paths to all nodes to use as columns
-            all_paths = set()
+            print(f"Processing XML file: {file_path}")
+            print(f"Root tag: {root.tag}")
             
-            def collect_paths(element, current_path=""):
-                path = current_path + "/" + element.tag if current_path else element.tag
+            # Extract all nodes and their paths
+            all_nodes = {}  # Dictionary to store node paths and their values
+            
+            # Keep track of element occurrences to handle repeated elements
+            element_counts = {}
+            
+            def process_element(element, path=""):
+                """Process element and its children, collecting paths and values"""
+                # Build current element path
+                current_path = path + "/" + element.tag if path else element.tag
                 
-                # Add attributes as paths
+                # Handle repeated elements by adding index
+                element_key = f"{current_path}"
+                if element_key in element_counts:
+                    element_counts[element_key] += 1
+                    indexed_path = f"{current_path}[{element_counts[element_key]}]"
+                else:
+                    element_counts[element_key] = 1
+                    indexed_path = f"{current_path}[{element_counts[element_key]}]"
+                
+                # Process attributes
                 for attr_name, attr_value in element.attrib.items():
-                    attr_path = f"{path}[@{attr_name}]"
-                    all_paths.add(attr_path)
+                    attr_path = f"{indexed_path}/@{attr_name}"
+                    all_nodes[attr_path] = attr_value
+                    print(f"Found attribute: {attr_path} = {attr_value}")
                 
-                # Add element path if it has text
+                # Process text content
                 if element.text and element.text.strip():
-                    all_paths.add(path)
+                    text_content = element.text.strip()
+                    all_nodes[indexed_path] = text_content
+                    print(f"Found text node: {indexed_path} = {text_content}")
                 
-                # Process children
+                # Reset element counts for each level of nesting to ensure proper counting
+                local_counts = {}
+                
+                # Process child elements
                 for child in element:
-                    collect_paths(child, path)
+                    child_key = child.tag
+                    
+                    # Track occurrences at this level
+                    if child_key in local_counts:
+                        local_counts[child_key] += 1
+                    else:
+                        local_counts[child_key] = 1
+                    
+                    # Build the path including the index for repeated elements
+                    child_path = f"{indexed_path}"
+                    
+                    process_element(child, child_path)
             
-            # Start collecting paths from root's children
+            # Start processing from the root
             for child in root:
-                collect_paths(child)
+                process_element(child)
             
-            columns = sorted(list(all_paths))
+            # Create a standardized format for comparison
+            columns = list(all_nodes.keys())
             
-            # Process each child element as a row
-            rows = []
-            for child in root:
-                row_dict = {}
-                
-                # Function to extract values based on path
-                def extract_value(element, path_parts):
-                    if not path_parts:
-                        return None
-                        
-                    current = path_parts[0]
-                    
-                    # Handle attribute paths
-                    if current.startswith("[") and current.endswith("]"):
-                        attr_name = current[2:-1]  # Extract attribute name
-                        return element.attrib.get(attr_name)
-                        
-                    # Handle element paths
-                    if current == element.tag:
-                        if len(path_parts) == 1:
-                            # This is the target element
-                            return element.text.strip() if element.text else None
-                        else:
-                            # Need to go deeper
-                            for child in element:
-                                result = extract_value(child, path_parts[1:])
-                                if result is not None:
-                                    return result
-                    
-                    return None
-                
-                # Extract values for each path
-                for col in columns:
-                    path_parts = col.split("/")
-                    row_dict[col] = extract_value(child, path_parts)
-                    
-                rows.append(row_dict)
+            # Create a single row with all paths and values
+            row = {col: all_nodes[col] for col in columns}
+            
+            print(f"Processed XML with {len(columns)} paths:")
+            for col in columns[:10]:  # Print first 10 for debugging
+                print(f"  {col}: {row[col]}")
+            
+            if len(columns) > 10:
+                print(f"  ... and {len(columns) - 10} more")
             
             return {
                 'columns': columns,
-                'rows': rows
+                'rows': [row]  # Return as a single row containing all XML paths
             }
         except Exception as e:
             import traceback
@@ -821,13 +828,127 @@ class FileDifferenceService:
             target_data = self.process_file(target_path, target_type)
             
             # Compare the files
-            comparison_result = self.compare_files(source_data, target_data, file_type=source_type)
+            if source_type == 'xml':
+                # Use specialized XML comparison for better attribute handling
+                comparison_result = self.compare_xml_files(source_data, target_data)
+            else:
+                comparison_result = self.compare_files(source_data, target_data, file_type=source_type)
             
             return jsonify(comparison_result)
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
             return jsonify({'error': str(e), 'details': error_details}), 500
+    
+    def compare_xml_files(self, source_data, target_data):
+        """
+        Specialized comparison for XML files to handle attributes and node matching correctly
+        
+        Args:
+            source_data (dict): Source XML data
+            target_data (dict): Target XML data
+            
+        Returns:
+            dict: Comparison result specifically formatted for XML
+        """
+        try:
+            print("Using specialized XML comparison...")
+            
+            # IMPORTANT: Keep source file's order - don't sort alphabetically
+            # First add all source paths in their original order
+            ordered_paths = []
+            for path in source_data['columns']:
+                if path not in ordered_paths:
+                    ordered_paths.append(path)
+            
+            # Then add any target-only paths at the end
+            for path in target_data['columns']:
+                if path not in ordered_paths:
+                    ordered_paths.append(path)
+            
+            print(f"All XML paths for comparison (ordered by source file): {len(ordered_paths)}")
+            
+            # Prepare comparison result
+            comparison_result = {
+                'fileType': 'xml',
+                'columns': ordered_paths,
+                'rows': [],
+                'summary': {
+                    'totalRows': len(ordered_paths),  # Each node path is a separate row in XML comparison
+                    'matchingRows': 0,
+                    'differingRows': 0
+                }
+            }
+            
+            # Create a map of paths to values for fast lookups
+            source_value_map = {}
+            target_value_map = {}
+            
+            # Process source data
+            for row in source_data['rows']:
+                for path in ordered_paths:
+                    if path in row:
+                        source_value_map[path] = row.get(path)
+            
+            # Process target data  
+            for row in target_data['rows']:
+                for path in ordered_paths:
+                    if path in row:
+                        target_value_map[path] = row.get(path)
+            
+            # Process each path as an individual row for comparison display
+            matching_count = 0
+            differing_count = 0
+            
+            # Create cells structure for each path, to ensure compatibility with frontend expectations
+            for path in ordered_paths:
+                source_value = source_value_map.get(path)
+                target_value = target_value_map.get(path)
+                
+                # Determine the status
+                if source_value is not None and target_value is not None:
+                    if source_value == target_value:
+                        status = 'match'
+                        matching_count += 1
+                    else:
+                        status = 'different'
+                        differing_count += 1
+                elif source_value is not None:
+                    status = 'source_only'
+                    differing_count += 1
+                elif target_value is not None:
+                    status = 'target_only'
+                    differing_count += 1
+                else:
+                    status = 'match'  # Both None, consider it a match
+                    matching_count += 1
+                
+                # Create a row with a cells structure matching what the frontend expects
+                row_obj = {
+                    'cells': {
+                        path: {
+                            'sourceValue': source_value,
+                            'targetValue': target_value,
+                            'status': status
+                        }
+                    }
+                }
+                
+                # Add this as a separate row
+                comparison_result['rows'].append(row_obj)
+            
+            # Update summary
+            comparison_result['summary']['matchingRows'] = matching_count
+            comparison_result['summary']['differingRows'] = differing_count
+            
+            return comparison_result
+            
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error in compare_xml_files: {str(e)}")
+            print(f"Error details: {error_details}")
+            raise
     
     def health_check(self):
         """

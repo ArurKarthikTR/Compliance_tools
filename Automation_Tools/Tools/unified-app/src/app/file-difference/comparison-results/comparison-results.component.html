@@ -1,4 +1,3 @@
-
 <div class="back-button-container">
   <button class="back-button" (click)="goBackToUpload()">← Back to Upload</button>
 </div>
@@ -9,98 +8,85 @@
   <div class="view-controls">
     <label class="view-control-label">
       <input type="checkbox" [(ngModel)]="showOnlyDifferences" (change)="toggleDifferencesOnly()">
-      Show only differences
+      {{ fileType === 'xml' ? 'Show only changed values' : 'Show only differences' }}
     </label>
   </div>
   
-  <div class="summary-container">
-    <div class="summary-item">
-      <span class="label">Total Rows:</span>
-      <span class="value">{{ summary.totalRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Matching Rows:</span>
-      <span class="value">{{ summary.matchingRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Differing Rows:</span>
-      <span class="value">{{ summary.differingRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Values Changed:</span>
-      <span class="value">{{ tableData.changedValuesCount || 0 }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Values Removed:</span>
-      <span class="value">{{ tableData.removedValuesCount || 0 }}</span>
-    </div>
-  </div>
-  
-  <div class="legend">
-    <div class="legend-item">
-      <div class="color-box original-value-box"></div>
-      <span>Original Value</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box changed-value-box"></div>
-      <span>Changed Value</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box source-only"></div>
-      <span>Only in Source</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box target-only"></div>
-      <span>Only in Target</span>
-    </div>
-  </div>
   
   <!-- XML file type view -->
   <div class="table-container" *ngIf="fileType === 'xml'">
-    <table class="comparison-table">
+    <!-- Color legend above the table -->
+    <div class="color-legend">
+      <div class="legend-item">
+        <span class="color-box changed-value-box"></span>
+        <span>Changed Value</span>
+      </div>
+      <div class="legend-item">
+        <span class="color-box source-only-box"></span>
+        <span>Only in Source</span>
+      </div>
+      <div class="legend-item">
+        <span class="color-box target-only-box"></span>
+        <span>Only in Target</span>
+      </div>
+      <div class="legend-item">
+        <span class="color-box match-value-box"></span>
+        <span>Matching Values</span>
+      </div>
+    </div>
+    
+    <table class="comparison-table simplified">
       <thead>
         <tr>
-          <th>Node Path</th>
-          <th>Source Value</th>
-          <th>Target Value</th>
-          <th class="status-column match">Match</th>
-          <th class="status-column different">Different</th>
-          <th class="status-column source-only">Only in Source</th>
-          <th class="status-column target-only">Only in Target</th>
+          <th>NODE PATH</th>
+          <th>SOURCE VALUE</th>
+          <th>TARGET VALUE</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of processedRows">
-          <td class="path-cell">{{ row.path }}</td>
-          <td [ngClass]="{'match': row.status === 'match', 'source-only': row.status === 'source_only'}">
-            <span *ngIf="row.sourceValue !== null && row.sourceValue !== undefined"
-                  [ngClass]="{'correct-value': row.status === 'different', 'wrong-value': row.status === 'different' && row.sourceValue !== row.targetValue}">
+        <tr *ngFor="let row of processedRows; let i = index" [ngClass]="{'row-divider': i > 0}">
+          <td class="path-cell">
+            <div class="node-path">{{ cleanNodePath(row.path) }}</div>
+          </td>
+          <!-- SOURCE COLUMN - Apply Red for different in source -->
+          <td>
+            <!-- Different value in source - show in RED -->
+            <span *ngIf="row.status === 'different' && row.sourceValue !== null && row.sourceValue !== undefined" 
+                  class="source-diff-value">
               {{ row.sourceValue }}
             </span>
-            <span *ngIf="row.sourceValue === null || row.sourceValue === undefined" class="empty-value">(empty)</span>
+            <!-- Source-only value (Blue) -->
+            <span *ngIf="row.status === 'source_only'" class="source-only">
+              {{ row.sourceValue }}
+            </span>
+            <!-- Value exists in both and is the same - show in orange -->
+            <span *ngIf="row.status === 'match' && row.sourceValue !== null && row.sourceValue !== undefined" class="match-value">
+              {{ row.sourceValue }}
+            </span>
+            <!-- Empty value -->
+            <span *ngIf="(row.sourceValue === null || row.sourceValue === undefined) && row.status !== 'target_only'" class="empty-value">(empty)</span>
+            <!-- For target-only rows, leave source column truly empty -->
+            <span *ngIf="row.status === 'target_only'"></span>
           </td>
-          <td [ngClass]="{'match': row.status === 'match', 'target-only': row.status === 'target_only'}">
-            <span *ngIf="row.targetValue !== null && row.targetValue !== undefined"
-                  [ngClass]="{'correct-value': row.status === 'different', 'wrong-value': row.status === 'different' && row.sourceValue !== row.targetValue}">
+          <!-- TARGET COLUMN - Apply Red for different in target -->
+          <td>
+            <!-- Different value in target - now show in RED -->
+            <span *ngIf="row.status === 'different' && row.targetValue !== null && row.targetValue !== undefined" 
+                  class="target-diff-value">
               {{ row.targetValue }}
             </span>
-            <span *ngIf="row.targetValue === null || row.targetValue === undefined" class="empty-value">(empty)</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'match'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'match'">-</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'different'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'different'">-</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'source_only'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'source_only'">-</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'target_only'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'target_only'">-</span>
+            <!-- Target-only value (Grey) -->
+            <span *ngIf="row.status === 'target_only'" class="target-only">
+              {{ row.targetValue }}
+            </span>
+            <!-- Value exists in both and is the same - show in orange -->
+            <span *ngIf="row.status === 'match' && row.targetValue !== null && row.targetValue !== undefined" class="match-value">
+              {{ row.targetValue }}
+            </span>
+            <!-- Empty value -->
+            <span *ngIf="(row.targetValue === null || row.targetValue === undefined) && row.status !== 'source_only'" class="empty-value">(empty)</span>
+            <!-- For source-only rows, leave target column truly empty -->
+            <span *ngIf="row.status === 'source_only'"></span>
           </td>
         </tr>
       </tbody>
@@ -147,6 +133,34 @@
         </tr>
       </tbody>
     </table>
+  </div>
+  
+  <!-- Summary stats and legend below the comparison table -->
+  <div class="summary-container">
+    <div class="summary-item">
+      <span class="label">TOTAL NODES:</span>
+      <span class="value">{{ summary.totalRows || 0 }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">MATCHING NODES:</span>
+      <span class="value" style="color: #00a65a;">{{ summary.matchingRows || 0 }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">DIFFERING NODES:</span>
+      <span class="value" style="color: #dd4b39;">{{ summary.differingRows || 0 }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">VALUES CHANGED:</span>
+      <span class="value" style="color: #f39c12;">{{ tableData.changedValuesCount || 0 }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">VALUES ONLY IN SOURCE:</span>
+      <span class="value" style="color: #0076CE;">{{ tableData.removedValuesCount || 0 }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">VALUES ONLY IN TARGET:</span>
+      <span class="value" style="color: #666666;">{{ tableData.targetOnlyCount || 0 }}</span>
+    </div>
   </div>
   
   

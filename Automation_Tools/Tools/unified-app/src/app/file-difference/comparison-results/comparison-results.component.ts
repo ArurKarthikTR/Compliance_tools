@@ -24,6 +24,7 @@ interface TableData {
   diffValueMap?: Map<string, {original: any, changed: any}>; // key: "row-col", values: original and changed
   changedValuesCount?: number;
   removedValuesCount?: number;
+  targetOnlyCount?: number;
 }
 
 @Component({
@@ -72,6 +73,54 @@ export class ComparisonResultsComponent implements OnChanges {
     console.log('Rows count:', this.rows.length);
     console.log('Summary:', this.summary);
     
+    // For XML comparison, we need to calculate all count values correctly
+    if (this.fileType === 'xml') {
+      console.log('Calculating counts for XML comparison');
+      
+      // Reset counts to calculate fresh values
+      let totalNodesCount = 0;
+      let matchingNodesCount = 0;
+      let differingNodesCount = 0;
+      let changedValuesCount = 0;
+      let removedValuesCount = 0;
+      let targetOnlyCount = 0;
+      
+      // Process each row (each row represents a node in XML)
+      this.rows.forEach(row => {
+        // For XML, each row.cells object contains paths and their comparison info
+        Object.entries(row.cells || {}).forEach(([path, cell]: [string, any]) => {
+          if (cell) {
+            totalNodesCount++;
+            
+            if (cell.status === 'match') {
+              matchingNodesCount++;
+            } else if (cell.status === 'different') {
+              changedValuesCount++;
+              differingNodesCount++;
+            } else if (cell.status === 'source_only') {
+              removedValuesCount++;
+              differingNodesCount++;
+            } else if (cell.status === 'target_only') {
+              targetOnlyCount++;
+              differingNodesCount++;
+            }
+          }
+        });
+      });
+      
+      // Update counts with calculated values
+      this.summary.totalRows = totalNodesCount;
+      this.summary.matchingRows = matchingNodesCount;
+      this.summary.differingRows = differingNodesCount;
+      
+      // Update the tableData with calculated counts
+      this.tableData.changedValuesCount = changedValuesCount;
+      this.tableData.removedValuesCount = removedValuesCount;
+      this.tableData.targetOnlyCount = targetOnlyCount;
+      
+      console.log(`XML counts - Total: ${totalNodesCount}, Matching: ${matchingNodesCount}, Differing: ${differingNodesCount}, Changed: ${changedValuesCount}, Removed: ${removedValuesCount}, Target Only: ${targetOnlyCount}`);
+    }
+    
     // Process data based on file type
     if (this.fileType === 'xml') {
       console.log('Processing XML data');
@@ -90,7 +139,32 @@ export class ComparisonResultsComponent implements OnChanges {
     }
   }
   
+  // Store original XML rows for toggling
+  private allXmlRows: ProcessedRow[] = [];
+  
   toggleDifferencesOnly(): void {
+    // For XML files, filter to show only differences
+    if (this.fileType === 'xml') {
+      if (this.allXmlRows.length === 0) {
+        // Store original rows first time
+        this.allXmlRows = [...this.processedRows];
+      }
+      
+      if (this.showOnlyDifferences) {
+        // Show only rows with changed values (different status)
+        this.processedRows = this.allXmlRows.filter(row => 
+          row.status === 'different'
+        );
+      } else {
+        // Show all rows
+        this.processedRows = [...this.allXmlRows];
+      }
+      
+      console.log(`Filtered XML rows to ${this.processedRows.length} rows (showing only changes: ${this.showOnlyDifferences})`);
+      return;
+    }
+    
+    // For CSV/XLSX files, apply filtering
     if (this.showOnlyDifferences) {
       // Filter to show only rows with differences
       this.filteredRows = this.tableData.rows.filter((row, rowIndex) => {
@@ -248,37 +322,64 @@ export class ComparisonResultsComponent implements OnChanges {
       return result;
     }
     
+    console.log('Processing XML comparison data with rows:', this.rows.length);
+    
     // Create a map to store unique paths and their values
     const pathMap = new Map<string, ProcessedRow>();
+    // Store original order of paths as they appear in source
+    const pathOrder: string[] = [];
     
-    // First pass: collect all unique paths and their values
+    // First pass: collect all unique paths and their values from all rows
     this.rows.forEach(row => {
-      Object.entries(row.cells).forEach(([column, cell]: [string, any]) => {
-        if (cell && (cell.sourceValue !== null || cell.targetValue !== null)) {
-          // If the path already exists in the map, update it only if it has values
-          if (!pathMap.has(column) || 
-              (pathMap.get(column)!.sourceValue === null && pathMap.get(column)!.targetValue === null)) {
-            pathMap.set(column, {
-              path: column,
-              sourceValue: cell.sourceValue,
-              targetValue: cell.targetValue,
-              status: cell.status
-            });
+      // For XML, each row.cells object contains a single path key
+      // which contains the comparison info for that XML node
+      Object.entries(row.cells || {}).forEach(([column, cell]: [string, any]) => {
+        if (cell) {
+          // If path not already tracked in order, add it
+          if (!pathOrder.includes(column)) {
+            pathOrder.push(column);
           }
+          
+          // Use the status directly from the backend if available
+          let status = cell.status;
+          
+          // If status is not provided, determine it based on source and target values
+          if (!status) {
+            if (cell.sourceValue !== null && cell.sourceValue !== undefined && 
+                cell.targetValue !== null && cell.targetValue !== undefined) {
+              status = cell.sourceValue !== cell.targetValue ? 'different' : 'match';
+            } else if (cell.sourceValue !== null && cell.sourceValue !== undefined) {
+              status = 'source_only';
+            } else if (cell.targetValue !== null && cell.targetValue !== undefined) {
+              status = 'target_only';
+            } else {
+              status = 'match'; // Both null/undefined
+            }
+          }
+          
+          // Always update the path map with latest values
+          pathMap.set(column, {
+            path: column,
+            sourceValue: cell.sourceValue !== undefined ? cell.sourceValue : null,
+            targetValue: cell.targetValue !== undefined ? cell.targetValue : null,
+            status: status
+          });
         }
       });
     });
     
-    // Convert map to array and sort by path
-    const sortedEntries = Array.from(pathMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    console.log(`Found ${pathOrder.length} unique XML paths`);
     
-    // Filter out entries where both source and target values are null
-    sortedEntries.forEach(([_, row]) => {
-      if (row.sourceValue !== null || row.targetValue !== null) {
+    // Use the original path order from source file instead of sorting alphabetically
+    pathOrder.forEach(path => {
+      const row = pathMap.get(path);
+      // Show all nodes in XML comparison, even matching ones
+      if (row) {
         result.push(row);
       }
     });
     
+    console.log(`Transformed XML data has ${result.length} rows`);
     return result;
   }
   
@@ -337,7 +438,11 @@ export class ComparisonResultsComponent implements OnChanges {
     // Add status-based class
     switch (status) {
       case 'match':
-        classNames = 'match-value';
+        // For CSV/XLSX files, don't apply the orange match-value styling
+        // Only apply match-value class for XML files
+        if (this.fileType === 'xml') {
+          classNames = 'match-value';
+        }
         break;
       case 'different':
         // Check if we have both source and target values
@@ -364,6 +469,12 @@ export class ComparisonResultsComponent implements OnChanges {
     }
     
     return classNames;
+  }
+  
+  // This function no longer removes array indices
+  cleanNodePath(path: string): string {
+    if (!path) return path;
+    return path; // Return path unchanged to preserve array indices
   }
   
   getCellContentClass(rowIndex: number, column: string): string {

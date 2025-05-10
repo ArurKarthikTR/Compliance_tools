@@ -49,10 +49,34 @@
     </div>
   </div>
   
+  <!-- XML File Preview -->
+  <div *ngIf="sourceFile && targetFile && 
+              getFileExtension(sourceFile.name) === '.xml' && 
+              getFileExtension(targetFile.name) === '.xml'" class="file-preview-section">
+    <h3 class="preview-header">XML File Preview</h3>
+    
+    <div class="file-previews-horizontal">
+      <div class="file-preview xml-preview">
+        <div class="file-preview-header">Source File: {{ sourceFile.name }}</div>
+        <div class="xml-preview-content" *ngIf="sourceFileContent">
+          <pre>{{ sourceFileContent }}</pre>
+        </div>
+      </div>
+      
+      <div class="file-preview xml-preview">
+        <div class="file-preview-header">Target File: {{ targetFile.name }}</div>
+        <div class="xml-preview-content" *ngIf="targetFileContent">
+          <pre>{{ targetFileContent }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Excel File Preview -->
   <div *ngIf="sourceFile && targetFile && 
               getFileExtension(sourceFile.name) === '.xlsx' && 
               getFileExtension(targetFile.name) === '.xlsx'" class="file-preview-section">
-    <h3 class="preview-header">File Preview <span class="preview-subtext">(showing first 5 rows and columns)</span></h3>
+    <h3 class="preview-header">Excel File Preview <span class="preview-subtext">(showing first 5 rows and columns)</span></h3>
     
     <div class="file-previews-horizontal">
       <div class="file-preview">

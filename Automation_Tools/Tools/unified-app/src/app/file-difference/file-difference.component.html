@@ -11,9 +11,18 @@
   <app-file-upload 
     *ngIf="!comparisonData" 
     [selectedFileType]="selectedFileType"
+    [inputSourceFile]="sourceFile"
+    [inputTargetFile]="targetFile"
+    [inputSourceFileSize]="sourceFileSize"
+    [inputTargetFileSize]="targetFileSize"
+    [inputSourceFilePreviewData]="sourceFilePreviewData"
+    [inputTargetFilePreviewData]="targetFilePreviewData"
+    [inputSourceFileContent]="sourceFileContent"
+    [inputTargetFileContent]="targetFileContent"
     (comparisonResults)="handleComparisonResults($event)"
     (loading)="handleLoading($event)"
-    (error)="handleError($event)">
+    (error)="handleError($event)"
+    (fileInfoUpdated)="storeFileInformation($event)">
   </app-file-upload>
 
   <app-comparison-results 

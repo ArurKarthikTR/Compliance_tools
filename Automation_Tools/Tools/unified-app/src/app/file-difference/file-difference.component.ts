@@ -17,6 +17,16 @@ export class FileDifferenceComponent {
   isLoading: boolean = false;
   errorMessage: string = '';
   selectedFileType: string = ''; // Will be set based on route or user selection
+  
+  // Store uploaded file information
+  sourceFile: File | null = null;
+  targetFile: File | null = null;
+  sourceFileSize: string = '';
+  targetFileSize: string = '';
+  sourceFilePreviewData: any = null;
+  targetFilePreviewData: any = null;
+  sourceFileContent: string | null = null;
+  targetFileContent: string | null = null;
 
   constructor(
     private fileDifferenceService: FileDifferenceService,
@@ -46,6 +56,28 @@ export class FileDifferenceComponent {
       console.warn('Received null or undefined results');
     }
   }
+  
+  storeFileInformation(fileInfo: any): void {
+    console.log('Storing file information:', fileInfo);
+    
+    // Store all the file information
+    this.sourceFile = fileInfo.sourceFile;
+    this.targetFile = fileInfo.targetFile;
+    this.sourceFileSize = fileInfo.sourceFileSize;
+    this.targetFileSize = fileInfo.targetFileSize;
+    this.sourceFilePreviewData = fileInfo.sourceFilePreviewData;
+    this.targetFilePreviewData = fileInfo.targetFilePreviewData;
+    this.sourceFileContent = fileInfo.sourceFileContent;
+    this.targetFileContent = fileInfo.targetFileContent;
+    
+    // Log XML content presence for debugging
+    if (this.sourceFileContent) {
+      console.log('Source XML content stored, length:', this.sourceFileContent.length);
+    }
+    if (this.targetFileContent) {
+      console.log('Target XML content stored, length:', this.targetFileContent.length);
+    }
+  }
 
   handleLoading(loading: boolean): void {
     console.log('FileDifferenceComponent loading state changed:', loading);
@@ -61,5 +93,6 @@ export class FileDifferenceComponent {
     console.log('FileDifferenceComponent resetting view');
     this.comparisonData = null;
     this.errorMessage = '';
+    // File information is preserved for the file-upload component
   }
 }

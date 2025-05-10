@@ -202,6 +202,25 @@
     max-width: 100%;
   }
   
+  &.xml-preview {
+    .xml-preview-content {
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid #e9ecef;
+      border-radius: 0 0 4px 4px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        font-family: "Consolas", monospace;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+    }
+  }
+  
   .file-preview-header {
     font-size: 16px;
     margin-bottom: 10px;
