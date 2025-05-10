@@ -12,33 +12,7 @@
     </label>
   </div>
   
-<<<<<<< HEAD
-  <!-- Summary container removed -->
-=======
-  <!--<div class="summary-container">
-    <div class="summary-item">
-      <span class="label">Total Rows:</span>
-      <span class="value">{{ summary.totalRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Matching Rows:</span>
-      <span class="value">{{ summary.matchingRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Differing Rows:</span>
-      <span class="value">{{ summary.differingRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Values Changed:</span>
-      <span class="value">{{ tableData.changedValuesCount || 0 }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Values Removed:</span>
-      <span class="value">{{ tableData.removedValuesCount || 0 }}</span>
-    </div>
-  </div>-->
->>>>>>> 3a51db802a6ebe237f7f1fbc0522b5c8caedd2bc
-  
+  <!-- Summary section removed - using cards instead -->
   
   <!-- XML file type view -->
   <div class="table-container" *ngIf="fileType === 'xml'">
@@ -248,9 +222,6 @@
       </div>
     </div>
   </div>
-  
-  <!-- Summary stats removed -->
-  
   
   <button class="download-button" (click)="downloadResults()">
     Download Results
