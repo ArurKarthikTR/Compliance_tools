@@ -12,30 +12,51 @@
     </label>
   </div>
   
+  <div class="summary-container">
+    <div class="summary-item">
+      <span class="label">Total Rows:</span>
+      <span class="value">{{ summary.totalRows }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Matching Rows:</span>
+      <span class="value">{{ summary.matchingRows }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Differing Rows:</span>
+      <span class="value">{{ summary.differingRows }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Values Changed:</span>
+      <span class="value">{{ tableData.changedValuesCount || 0 }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Values Removed:</span>
+      <span class="value">{{ tableData.removedValuesCount || 0 }}</span>
+    </div>
+  </div>
+  
+  <div class="legend">
+    <div class="legend-item">
+      <div class="color-box original-value-box"></div>
+      <span>Original Value</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box changed-value-box"></div>
+      <span>Changed Value</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box source-only"></div>
+      <span>Only in Source</span>
+    </div>
+    <div class="legend-item">
+      <div class="color-box target-only"></div>
+      <span>Only in Target</span>
+    </div>
+  </div>
   
   <!-- XML file type view -->
   <div class="table-container" *ngIf="fileType === 'xml'">
-    <!-- Color legend above the table -->
-    <div class="color-legend">
-      <div class="legend-item">
-        <span class="color-box changed-value-box"></span>
-        <span>Changed Value</span>
-      </div>
-      <div class="legend-item">
-        <span class="color-box source-only-box"></span>
-        <span>Only in Source</span>
-      </div>
-      <div class="legend-item">
-        <span class="color-box target-only-box"></span>
-        <span>Only in Target</span>
-      </div>
-      <div class="legend-item">
-        <span class="color-box match-value-box"></span>
-        <span>Matching Values</span>
-      </div>
-    </div>
-    
-    <table class="comparison-table simplified">
+    <table class="comparison-table">
       <thead>
         <tr>
           <th>NODE PATH</th>
