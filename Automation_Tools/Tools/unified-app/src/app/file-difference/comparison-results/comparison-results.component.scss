@@ -621,8 +621,8 @@
     }
     
     .original-value {
-      background-color: rgba(220, 53, 69, 0.15);
-      color: #dc3545;
+      background-color: rgba(40, 167, 69, 0.15);
+      color: #28a745;
       padding: 6px 8px;
       font-weight: 600;
       display: block;
@@ -846,8 +846,8 @@
       border-radius: 3px;
       
       &.original-value-box {
-        background-color: #dc3545; /* Red for source values */
-        box-shadow: 0 1px 3px rgba(220, 53, 69, 0.3);
+        background-color: #28a745; /* Green for original values */
+        box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
       }
       
       &.changed-value-box {
@@ -912,8 +912,8 @@
       }
       
       &.original-value-box {
-        background-color: #dc3545;
-        box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+        background-color: #28a745; /* Green for original values */
+        box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
       }
       
       &.changed-value-box {
