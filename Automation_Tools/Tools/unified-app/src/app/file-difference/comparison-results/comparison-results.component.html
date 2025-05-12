@@ -12,10 +12,53 @@
     </label>
   </div>
   
-  <!-- Summary section removed - using cards instead -->
-  
   <!-- XML file type view -->
   <div class="table-container" *ngIf="fileType === 'xml'">
+    <!-- XML Summary Statistics in compact two-column layout - Positioned directly below the view-controls -->
+    <div style="display: flex; margin-top: 12px; margin-bottom: 12px; gap: 10px; font-size: 0.8em;">
+      <!-- Left Column -->
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+        <!-- Total Nodes -->
+        <div style="display: flex; align-items: center; background-color: #f8f9fa; padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+          <div style="font-weight: 600; color: #6c757d; margin-right: auto; font-size: 11px;">TOTAL NODES:</div>
+          <div style="font-weight: 700; color: #0275d8; font-size: 14px;">{{ comparisonData.summary.totalRows || 0 }}</div>
+        </div>
+        
+        <!-- Matching Nodes -->
+        <div style="display: flex; align-items: center; background-color: #f8f9fa; padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+          <div style="font-weight: 600; color: #6c757d; margin-right: auto; font-size: 11px;">MATCHING NODES:</div>
+          <div style="font-weight: 700; color: #28a745; font-size: 14px;">{{ comparisonData.summary.matchingRows || 0 }}</div>
+        </div>
+        
+        <!-- Differing Nodes -->
+        <div style="display: flex; align-items: center; background-color: #f8f9fa; padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+          <div style="font-weight: 600; color: #6c757d; margin-right: auto; font-size: 11px;">DIFFERING NODES:</div>
+          <div style="font-weight: 700; color: #dc3545; font-size: 14px;">{{ comparisonData.summary.differingRows || 0 }}</div>
+        </div>
+      </div>
+      
+      <!-- Right Column -->
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+        <!-- Values Changed -->
+        <div style="display: flex; align-items: center; background-color: #f8f9fa; padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+          <div style="font-weight: 600; color: #6c757d; margin-right: auto; font-size: 11px;">VALUES CHANGED:</div>
+          <div style="font-weight: 700; color: #FF8200; font-size: 14px;">{{ tableData.changedValuesCount || 0 }}</div>
+        </div>
+        
+        <!-- Values Only in Source -->
+        <div style="display: flex; align-items: center; background-color: #f8f9fa; padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+          <div style="font-weight: 600; color: #6c757d; margin-right: auto; font-size: 11px;">VALUES ONLY IN SOURCE:</div>
+          <div style="font-weight: 700; color: #0076CE; font-size: 14px;">{{ tableData.removedValuesCount || 0 }}</div>
+        </div>
+        
+        <!-- Values Only in Target -->
+        <div style="display: flex; align-items: center; background-color: #f8f9fa; padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+          <div style="font-weight: 600; color: #6c757d; margin-right: auto; font-size: 11px;">VALUES ONLY IN TARGET:</div>
+          <div style="font-weight: 700; color: #666666; font-size: 14px;">{{ tableData.targetOnlyCount || 0 }}</div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Color legend for XML comparison -->
     <div class="color-legend" style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: flex; gap: 20px;">
       <div style="display: flex; align-items: center;">
@@ -35,12 +78,20 @@
         <span style="font-size: 14px;">Matching Values</span>
       </div>
     </div>
-    <table class="comparison-table">
-      <thead>
+    <!-- Table container with scrollbar starting from table headers -->
+    <div style="max-height: 500px; overflow: auto; border: 1px solid #e9ecef; border-radius: 4px;">
+    <!-- Equal width columns for XML comparison table with sticky headers -->
+    <table class="comparison-table" style="table-layout: fixed; width: 100%; border-collapse: separate; margin: 0;">
+      <colgroup>
+        <col style="width: 33.33%;">
+        <col style="width: 33.33%;">
+        <col style="width: 33.33%;">
+      </colgroup>
+      <thead style="position: sticky; top: 0; z-index: 1; background-color: white;">
         <tr>
-          <th>NODE PATH</th>
-          <th>SOURCE VALUE</th>
-          <th>TARGET VALUE</th>
+          <th style="position: sticky; top: 0;">NODE PATH</th>
+          <th style="position: sticky; top: 0;">SOURCE VALUE</th>
+          <th style="position: sticky; top: 0;">TARGET VALUE</th>
         </tr>
       </thead>
       <tbody>
@@ -95,44 +146,6 @@
         </tr>
       </tbody>
     </table>
-    
-    <!-- Summary statistics cards for XML comparison -->
-    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; margin-bottom: 20px; font-size: 0.85em;">
-      <!-- Total Nodes -->
-      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
-        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">TOTAL NODES:</div>
-        <div style="font-size: 24px; font-weight: 700; color: #0275d8;">{{ comparisonData.summary.totalRows || 0 }}</div>
-      </div>
-      
-      <!-- Matching Nodes -->
-      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
-        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">MATCHING NODES:</div>
-        <div style="font-size: 24px; font-weight: 700; color: #28a745;">{{ comparisonData.summary.matchingRows || 0 }}</div>
-      </div>
-      
-      <!-- Differing Nodes -->
-      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
-        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">DIFFERING NODES:</div>
-        <div style="font-size: 24px; font-weight: 700; color: #dc3545;">{{ comparisonData.summary.differingRows || 0 }}</div>
-      </div>
-      
-      <!-- Values Changed -->
-      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
-        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES CHANGED:</div>
-        <div style="font-size: 24px; font-weight: 700; color: #FF8200;">{{ tableData.changedValuesCount || 0 }}</div>
-      </div>
-      
-      <!-- Values Only in Source -->
-      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
-        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES ONLY IN SOURCE:</div>
-        <div style="font-size: 24px; font-weight: 700; color: #0076CE;">{{ tableData.removedValuesCount || 0 }}</div>
-      </div>
-      
-      <!-- Values Only in Target -->
-      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
-        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES ONLY IN TARGET:</div>
-        <div style="font-size: 24px; font-weight: 700; color: #666666;">{{ tableData.targetOnlyCount || 0 }}</div>
-      </div>
     </div>
   </div>
   
