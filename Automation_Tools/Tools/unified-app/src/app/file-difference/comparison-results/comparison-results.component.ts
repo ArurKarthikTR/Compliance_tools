@@ -602,10 +602,13 @@ export class ComparisonResultsComponent implements OnChanges {
     return classNames;
   }
   
-  // This function no longer removes array indices
+  // Clean node path to remove URL portions while preserving node names and array indices
   cleanNodePath(path: string): string {
     if (!path) return path;
-    return path; // Return path unchanged to preserve array indices
+    
+    // Remove URL portions like {http://www.irs.gov/efile} from the path
+    // This regex matches text within curly braces containing URL-like content
+    return path.replace(/\{[^}]*\}/g, '');
   }
   
   getCellContentClass(rowIndex: number | string, column: string): string {

@@ -1,4 +1,4 @@
-<div [formGroup]="configForm">
+<div class="container" [formGroup]="configForm">
   <h2>Test Data Generator</h2>
 
   <div class="header-controls">
@@ -25,7 +25,7 @@
     <p class="no-fields-message">No fields added yet. Add a field to start generating data.</p>
   </div>
 
-  <div formArrayName="fields">
+  <div formArrayName="fields" class="fields-container">
     <div class="field-card" *ngFor="let field of fields.controls; let i = index" [formGroupName]="i">
       <div class="field-header">
         <div class="field-name">{{ field.get('name')?.value }}</div>
@@ -47,7 +47,7 @@
 
   <div class="add-field-container" *ngIf="showFieldForm">
     <div class="add-field-form">
-      <h3>Add New Field</h3>
+      <h3>{{ isEditMode ? 'Edit Field' : 'Add New Field' }}</h3>
       
       <form #fieldForm="ngForm">
         <div class="form-group">
@@ -68,9 +68,110 @@
             id="dataType" 
             class="form-control"
             name="type"
-            [(ngModel)]="newField.type">
+            [(ngModel)]="newField.type"
+            (change)="updateNewFieldOptions()">
             <option *ngFor="let type of fieldTypes" [value]="type.value">{{ type.label }}</option>
           </select>
+        </div>
+        
+        <!-- String Options -->
+        <div class="form-group" *ngIf="newField.type === 'String'">
+          <label for="stringMinLength">String Min Length:</label>
+          <input 
+            type="number" 
+            id="stringMinLength" 
+            class="form-control" 
+            name="minLength"
+            [(ngModel)]="newField.options.minLength" 
+            min="1" 
+            max="100">
+          
+          <label for="stringMaxLength">String Max Length:</label>
+          <input 
+            type="number" 
+            id="stringMaxLength" 
+            class="form-control" 
+            name="maxLength"
+            [(ngModel)]="newField.options.maxLength" 
+            min="1" 
+            max="100">
+        </div>
+        
+        <!-- Number Options -->
+        <div class="form-group" *ngIf="newField.type === 'Number'">
+          <label for="numberMin">Min Value:</label>
+          <input 
+            type="number" 
+            id="numberMin" 
+            class="form-control" 
+            name="min"
+            [(ngModel)]="newField.options.min">
+          
+          <label for="numberMax">Max Value:</label>
+          <input 
+            type="number" 
+            id="numberMax" 
+            class="form-control" 
+            name="max"
+            [(ngModel)]="newField.options.max">
+            
+          <label for="numberLength">Number Length:</label>
+          <input 
+            type="number" 
+            id="numberLength" 
+            class="form-control" 
+            name="length"
+            [(ngModel)]="newField.options.length" 
+            min="1" 
+            max="20">
+        </div>
+        
+        <!-- Float/Decimal Options -->
+        <div class="form-group" *ngIf="newField.type === 'Float' || newField.type === 'Decimal'">
+          <label for="floatMin">Min Value:</label>
+          <input 
+            type="number" 
+            id="floatMin" 
+            class="form-control" 
+            name="min"
+            [(ngModel)]="newField.options.min">
+          
+          <label for="floatMax">Max Value:</label>
+          <input 
+            type="number" 
+            id="floatMax" 
+            class="form-control" 
+            name="max"
+            [(ngModel)]="newField.options.max">
+          
+          <label for="floatPrecision">Decimal Precision:</label>
+          <input 
+            type="number" 
+            id="floatPrecision" 
+            class="form-control" 
+            name="precision"
+            [(ngModel)]="newField.options.precision" 
+            min="0" 
+            max="10">
+        </div>
+        
+        <!-- Date Options -->
+        <div class="form-group" *ngIf="newField.type === 'Date'">
+          <label for="startDate">Start Date:</label>
+          <input 
+            type="date" 
+            id="startDate" 
+            class="form-control" 
+            name="startDate"
+            [(ngModel)]="newField.options.startDate">
+          
+          <label for="endDate">End Date:</label>
+          <input 
+            type="date" 
+            id="endDate" 
+            class="form-control" 
+            name="endDate"
+            [(ngModel)]="newField.options.endDate">
         </div>
         
         <div class="form-group">
@@ -100,7 +201,9 @@
       
       <div class="form-actions">
         <button type="button" class="btn btn-cancel" (click)="cancelAddField()">Cancel</button>
-        <button type="button" class="btn btn-save" (click)="saveNewField()" [disabled]="!fieldForm.valid">Save Field</button>
+        <button type="button" class="btn btn-save" (click)="saveNewField()" [disabled]="!fieldForm.valid">
+          {{ isEditMode ? 'Update Field' : 'Save Field' }}
+        </button>
       </div>
     </div>
   </div>

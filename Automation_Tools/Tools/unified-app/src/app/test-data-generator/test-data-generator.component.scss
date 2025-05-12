@@ -89,10 +89,15 @@ h3 {
   padding: 20px;
 }
 
+.fields-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
 .field-card {
   border: 1px solid #ddd;
   border-radius: 8px;
-  margin-bottom: 15px;
   overflow: hidden;
 }
 

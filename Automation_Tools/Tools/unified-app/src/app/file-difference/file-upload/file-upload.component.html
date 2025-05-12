@@ -52,7 +52,8 @@
   <!-- XML File Preview -->
   <div *ngIf="sourceFile && targetFile && 
               getFileExtension(sourceFile.name) === '.xml' && 
-              getFileExtension(targetFile.name) === '.xml'" class="file-preview-section">
+              getFileExtension(targetFile.name) === '.xml'" 
+       class="file-preview-section" style="margin-top: 20px; border: 1px solid #e0e0e0; padding: 15px; border-radius: 5px;">
     <h3 class="preview-header">XML File Preview</h3>
     
     <div class="file-previews-horizontal">
@@ -79,8 +80,13 @@
               (targetFile && 
               (getFileExtension(targetFile.name) === '.xlsx' || 
                getFileExtension(targetFile.name) === '.csv'))" 
+<<<<<<< HEAD
        class="file-preview-section">
     <h3 class="preview-header">File Preview <span class="preview-subtext">(showing all rows and columns)</span></h3>
+=======
+       class="file-preview-section" style="margin-top: 20px; border: 1px solid #e0e0e0; padding: 15px; border-radius: 5px;">
+    <h3 class="preview-header">File Preview <span class="preview-subtext">(showing first 5 rows and columns)</span></h3>
+>>>>>>> 2e1f1963a43c36cdd2e766f7d27e7e038c18fb7d
     
     <div class="file-previews-horizontal">
       <!-- Source File Preview -->
@@ -88,7 +94,7 @@
                 (getFileExtension(sourceFile.name) === '.xlsx' || 
                  getFileExtension(sourceFile.name) === '.csv')">
         <div class="file-preview-header">{{ sourceFile.name }}</div>
-        <div class="preview-table-container" *ngIf="sourceFilePreviewData">
+        <div class="preview-table-container" *ngIf="sourceFilePreviewData" style="max-height: 300px; overflow: auto; border: 1px solid #ddd;">
           <table class="preview-table">
             <thead>
               <tr>
@@ -114,7 +120,7 @@
                 (getFileExtension(targetFile.name) === '.xlsx' || 
                  getFileExtension(targetFile.name) === '.csv')">
         <div class="file-preview-header">{{ targetFile.name }}</div>
-        <div class="preview-table-container" *ngIf="targetFilePreviewData">
+        <div class="preview-table-container" *ngIf="targetFilePreviewData" style="max-height: 300px; overflow: auto; border: 1px solid #ddd;">
           <table class="preview-table">
             <thead>
               <tr>

@@ -157,6 +157,9 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   animation: fadeIn 0.5s ease-in-out;
+  display: block;
+  margin-bottom: 20px;
+  overflow: hidden;
 }
 
 .preview-header {
@@ -167,6 +170,7 @@
   font-weight: 600;
   position: relative;
   padding-bottom: 8px;
+  display: block;
   
   &:after {
     content: '';
@@ -196,17 +200,25 @@
   flex: 1;
   min-width: 300px;
   margin-bottom: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: block;
   
   .file-preview-header {
     font-weight: 600;
     margin-bottom: 10px;
     color: #495057;
     font-size: 16px;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-bottom: 1px solid #e9ecef;
+    text-align: center;
   }
   
   .preview-table-container {
     max-height: 300px;
-    overflow-y: auto;
+    overflow: auto;
     border: 1px solid #e9ecef;
     border-radius: 6px;
   }
@@ -220,12 +232,16 @@
       text-align: left;
       border-bottom: 1px solid #e9ecef;
       font-size: 14px;
+      border: 1px solid #e9ecef;
     }
     
     th {
       background-color: #f8f9fa;
       font-weight: 600;
       color: #495057;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
     
     tr:nth-child(even) {
@@ -248,15 +264,16 @@
 .xml-preview {
   .xml-preview-content {
     max-height: 300px;
-    overflow-y: auto;
+    overflow: auto;
     background-color: #f8f9fa;
     border-radius: 6px;
     padding: 10px;
+    border: 1px solid #e9ecef;
     
     pre {
       margin: 0;
       white-space: pre-wrap;
-      font-family: monospace;
+      font-family: 'Courier New', monospace;
       font-size: 14px;
       color: #495057;
     }
@@ -290,6 +307,7 @@
 .actions {
   display: flex;
   gap: 10px;
+  margin-top: 20px;
   margin-bottom: 15px;
   
   button {

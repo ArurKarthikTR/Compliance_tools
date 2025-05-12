@@ -25,25 +25,23 @@ export class TestDataGeneratorComponent implements OnInit {
   successMessage: string = '';
   
   fieldTypes: FieldType[] = [
-    { value: 'Name', label: 'Name', hasOptions: false },
     { value: 'String', label: 'String', hasOptions: true, optionsConfig: { minLength: 5, maxLength: 20 } },
-    { value: 'Number', label: 'Number', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 0 } },
-    { value: 'Date', label: 'Date', hasOptions: true, optionsConfig: { format: 'YYYY-MM-DD' } },
-    { value: 'Email', label: 'Email', hasOptions: false },
-    { value: 'Address', label: 'Address', hasOptions: false },
-    { value: 'Country', label: 'Country', hasOptions: false },
+    { value: 'Number', label: 'Number', hasOptions: true, optionsConfig: { min: 0, max: 100, length: 5 } },
     { value: 'Boolean', label: 'Boolean', hasOptions: false },
+    { value: 'Date', label: 'Date', hasOptions: true, optionsConfig: { startDate: '2020-01-01', endDate: '2025-12-31' } },
     { value: 'Float', label: 'Float', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
-    { value: 'Decimal', label: 'Decimal', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
-    { value: 'Phone', label: 'Phone', hasOptions: false }
+    { value: 'Decimal', label: 'Decimal', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } }
   ];
   
   showFieldForm: boolean = false;
+  isEditMode: boolean = false;
+  editingFieldIndex: number = -1;
   newField: FieldConfig = {
     id: '',
     name: '',
-    type: 'Name',
-    unique: false
+    type: 'String',
+    unique: false,
+    options: {}
   };
 
   constructor(
@@ -72,14 +70,27 @@ export class TestDataGeneratorComponent implements OnInit {
       this.newField = {
         id: this.generateId(),
         name: '',
-        type: 'Name',
-        unique: false
+        type: 'String',
+        unique: false,
+        options: { minLength: 5, maxLength: 20 }
       };
+    }
+  }
+
+  updateNewFieldOptions(): void {
+    const selectedType = this.fieldTypes.find(type => type.value === this.newField.type);
+    
+    if (selectedType && selectedType.hasOptions) {
+      this.newField.options = { ...selectedType.optionsConfig };
+    } else {
+      this.newField.options = {};
     }
   }
 
   cancelAddField(): void {
     this.showFieldForm = false;
+    this.isEditMode = false;
+    this.editingFieldIndex = -1;
   }
 
   saveNewField(): void {
@@ -92,13 +103,31 @@ export class TestDataGeneratorComponent implements OnInit {
       id: [this.newField.id],
       name: [this.newField.name, Validators.required],
       type: [this.newField.type, Validators.required],
-      options: this.fb.group({}),
+      options: this.fb.group(this.newField.options || {}),
       unique: [this.newField.unique]
     });
 
-    this.fields.push(fieldGroup);
+    if (this.isEditMode && this.editingFieldIndex >= 0) {
+      // Update existing field
+      this.fields.setControl(this.editingFieldIndex, fieldGroup);
+    } else {
+      // Add new field
+      this.fields.push(fieldGroup);
+    }
+    
     this.showFieldForm = false;
+    this.isEditMode = false;
+    this.editingFieldIndex = -1;
     this.errorMessage = '';
+    
+    // Reset the new field for next use
+    this.newField = {
+      id: this.generateId(),
+      name: '',
+      type: 'String',
+      unique: false,
+      options: { minLength: 5, maxLength: 20 }
+    };
   }
 
   removeField(index: number): void {
@@ -119,9 +148,23 @@ export class TestDataGeneratorComponent implements OnInit {
   }
 
   editField(index: number): void {
-    // This would typically open a modal or form for editing
-    // For now, we'll just log that the edit button was clicked
-    console.log('Edit field at index', index);
+    const fieldGroup = this.fields.at(index) as FormGroup;
+    
+    // Set edit mode
+    this.isEditMode = true;
+    this.editingFieldIndex = index;
+    
+    // Populate the form with the field's current values
+    this.newField = {
+      id: fieldGroup.get('id')?.value,
+      name: fieldGroup.get('name')?.value,
+      type: fieldGroup.get('type')?.value,
+      unique: fieldGroup.get('unique')?.value,
+      options: fieldGroup.get('options')?.value || {}
+    };
+    
+    // Show the form
+    this.showFieldForm = true;
   }
 
   updateFieldOptions(index: number): void {

@@ -119,6 +119,9 @@ export class FileUploadComponent implements OnInit, OnChanges {
         this.sourceFilePreviewData = null;
         this.sourceFileContent = null;
       }
+      
+      // Emit file info for all file types
+      this.emitFileInfo();
     }
   }
   
@@ -142,6 +145,9 @@ export class FileUploadComponent implements OnInit, OnChanges {
         this.targetFilePreviewData = null;
         this.targetFileContent = null;
       }
+      
+      // Emit file info for all file types
+      this.emitFileInfo();
     }
   }
   
@@ -150,6 +156,13 @@ export class FileUploadComponent implements OnInit, OnChanges {
     formData.append('file', file);
     
     console.log(`Loading preview for ${fileType} file: ${file.name}`);
+    
+    // Show loading indicator or placeholder while waiting for preview
+    if (fileType === 'source') {
+      this.sourceFilePreviewData = { loading: true, columns: ['Loading...'], rows: [] };
+    } else {
+      this.targetFilePreviewData = { loading: true, columns: ['Loading...'], rows: [] };
+    }
     
     this.http.post('http://localhost:5000/api/file-difference/preview', formData)
       .subscribe({
@@ -169,7 +182,24 @@ export class FileUploadComponent implements OnInit, OnChanges {
         },
         error: (error) => {
           console.error(`Error loading ${fileType} file preview:`, error);
-          // Don't show error to user, just log it
+          
+          // Set a basic preview data structure even if preview fails
+          if (fileType === 'source') {
+            this.sourceFilePreviewData = { 
+              error: true, 
+              columns: ['Preview not available'], 
+              rows: [{ 'Preview not available': 'Could not load preview data' }] 
+            };
+          } else {
+            this.targetFilePreviewData = { 
+              error: true, 
+              columns: ['Preview not available'], 
+              rows: [{ 'Preview not available': 'Could not load preview data' }] 
+            };
+          }
+          
+          // Still emit file info to ensure files are tracked
+          this.emitFileInfo();
         }
       });
   }

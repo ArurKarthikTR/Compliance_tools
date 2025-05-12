@@ -366,25 +366,67 @@ class TestGeneratorService:
         min_value = options.get('min', 0)
         max_value = options.get('max', 100)
         decimal = options.get('decimal', False)
+        length = options.get('length')
         
         if decimal:
             return round(random.uniform(min_value, max_value), 2)
+        elif length:
+            # Generate a number with specific length
+            length = int(length)
+            if length <= 0:
+                return random.randint(min_value, max_value)
+            
+            # Generate a random number with exactly 'length' digits
+            if length == 1:
+                return random.randint(0, 9)
+            else:
+                min_length_value = 10 ** (length - 1)
+                max_length_value = (10 ** length) - 1
+                
+                # Respect min and max constraints
+                actual_min = max(min_value, min_length_value)
+                actual_max = min(max_value, max_length_value)
+                
+                # If constraints conflict, prioritize length
+                if actual_min > actual_max:
+                    actual_min = min_length_value
+                    actual_max = max_length_value
+                
+                return random.randint(actual_min, actual_max)
         else:
             return random.randint(min_value, max_value)
     
     def _generate_date(self, options):
         """Generate date data"""
-        start_date = options.get('startDate', '2020-01-01')
-        end_date = options.get('endDate', '2025-12-31')
+        # Default dates if not provided or if there's an error parsing
+        default_start = datetime.datetime(2020, 1, 1)
+        default_end = datetime.datetime(2025, 12, 31)
+        
+        # Get date strings from options
+        start_date_str = options.get('startDate', '2020-01-01')
+        end_date_str = options.get('endDate', '2025-12-31')
+        
+        # Try to parse the dates
+        try:
+            start = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
+        except (ValueError, TypeError):
+            start = default_start
+            
+        try:
+            end = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
+        except (ValueError, TypeError):
+            end = default_end
+            
+        # Ensure end date is not before start date
+        if end < start:
+            end = start + datetime.timedelta(days=365)  # Default to 1 year range
         
         if self.fake:
-            return self.fake.date_between(start_date=start_date, end_date=end_date).strftime('%Y-%m-%d')
+            return self.fake.date_between(start_date=start, end_date=end).strftime('%Y-%m-%d')
         else:
             # Simple random date between start and end
-            start = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-            end = datetime.datetime.strptime(end_date, '%Y-%m-%d')
             delta = end - start
-            random_days = random.randint(0, delta.days)
+            random_days = random.randint(0, max(0, delta.days))
             return (start + datetime.timedelta(days=random_days)).strftime('%Y-%m-%d')
     
     def _generate_boolean(self, options):
