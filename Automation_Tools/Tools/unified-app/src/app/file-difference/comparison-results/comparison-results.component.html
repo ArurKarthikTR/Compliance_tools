@@ -229,8 +229,8 @@
               
               <!-- Regular cell without difference -->
               <ng-container *ngIf="!tableData.diffValueMap || !tableData.headers || !tableData.headers[colIndex] || !tableData.diffValueMap.has(rowIndex + '-' + tableData.headers[colIndex])">
-                <span *ngIf="cell !== null && cell !== undefined"
-                      [ngClass]="tableData.headers && tableData.headers[colIndex] ? getCellClass(rowIndex, tableData.headers[colIndex]) : ''">
+              <span *ngIf="cell !== null && cell !== undefined"
+                      [ngClass]="tableData.headers && tableData.headers[colIndex] ? getCellClass(+rowIndex, tableData.headers[colIndex]) : ''">
                   {{ cell }}
                 </span>
                 <span *ngIf="cell === null || cell === undefined" class="empty-value">(empty)</span>

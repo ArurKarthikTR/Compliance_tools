@@ -732,40 +732,118 @@ class FileDifferenceService:
         try:
             print(f"Previewing Excel file: {file_path}")
             
-            # Use nrows parameter to check the first few rows to determine header
-            sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10)
+            # Try to find the actual data rows by examining the file structure
+            # First, read a larger sample to analyze the structure
+            analysis_df = pd.read_excel(file_path, engine='openpyxl', nrows=20, header=None)
             
-            # Check if columns are unnamed
-            unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
+            # Look for patterns that indicate header rows
+            # 1. Look for rows with string values that could be column headers
+            potential_header_rows = []
             
-            # Determine the header row based on the sample
-            header_row = 0
-            if unnamed_count > len(sample_df.columns) / 2:
-                # Try with header in row 1
-                header_row = 1
-                sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10, header=1)
-                unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
+            for i in range(min(10, len(analysis_df))):
+                row = analysis_df.iloc[i]
+                # Check if row has mostly string values that could be headers
+                string_values = sum(1 for val in row if isinstance(val, str) and val and not pd.isna(val))
+                if string_values >= 3 and string_values >= len(row) * 0.5:
+                    potential_header_rows.append(i)
+            
+            print(f"Potential header rows found at indices: {potential_header_rows}")
+            
+            # Try each potential header row and see which gives the best results
+            best_header_row = 0
+            best_df = None
+            best_score = -1
+            
+            for header_idx in potential_header_rows + [0]:  # Always include 0 as a fallback
+                try:
+                    test_df = pd.read_excel(file_path, engine='openpyxl', nrows=15, header=header_idx)
+                    
+                    # Score this header row based on column name quality
+                    unnamed_count = sum(1 for col in test_df.columns if 'Unnamed:' in str(col))
+                    empty_count = sum(1 for col in test_df.columns if pd.isna(col) or str(col).strip() == '')
+                    
+                    # Calculate a score - higher is better
+                    total_cols = len(test_df.columns)
+                    named_cols = total_cols - unnamed_count - empty_count
+                    score = named_cols / total_cols if total_cols > 0 else 0
+                    
+                    print(f"Header row {header_idx}: score={score:.2f}, named={named_cols}, unnamed={unnamed_count}, empty={empty_count}")
+                    
+                    if score > best_score:
+                        best_score = score
+                        best_header_row = header_idx
+                        best_df = test_df
+                except Exception as e:
+                    print(f"Error testing header row {header_idx}: {str(e)}")
+            
+            # If we couldn't find a good header row, try one more approach
+            if best_score < 0.5:
+                print("No good header row found, trying to detect data patterns")
                 
-                if unnamed_count > len(sample_df.columns) / 2:
-                    # Try with header in row 2
-                    header_row = 2
-                    sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10, header=2)
+                # Look for the first row that has a date or numeric value that could be data
+                data_start_row = None
+                for i in range(min(15, len(analysis_df))):
+                    row = analysis_df.iloc[i]
+                    # Check if row has numeric or date values that could be data
+                    numeric_values = sum(1 for val in row if isinstance(val, (int, float)) and not pd.isna(val))
+                    if numeric_values >= 2:
+                        # Look at the previous row as a potential header
+                        if i > 0:
+                            data_start_row = i
+                            header_row = i - 1
+                            break
+                
+                if data_start_row is not None:
+                    print(f"Detected data starting at row {data_start_row}, using row {header_row} as header")
+                    try:
+                        best_df = pd.read_excel(file_path, engine='openpyxl', nrows=15, header=header_row)
+                        best_header_row = header_row
+                    except Exception as e:
+                        print(f"Error using detected header row {header_row}: {str(e)}")
+            
+            # If we still don't have a good dataframe, use the original with default header
+            if best_df is None:
+                print("Using default header row")
+                best_df = pd.read_excel(file_path, engine='openpyxl', nrows=15)
+            
+            # Check for specific column patterns in Project Management files
+            # Look for common column names in project management files
+            column_list = [str(col).lower() for col in best_df.columns]
+            project_mgmt_keywords = ['project', 'task', 'name', 'assigned', 'start', 'date', 'end', 'days']
+            
+            keyword_matches = sum(1 for col in column_list for keyword in project_mgmt_keywords if keyword in col)
+            
+            # If we don't have good column names but the file looks like a project management file
+            # Try to read from row 2 which often contains the actual headers in these files
+            if keyword_matches < 2 and 'project' in os.path.basename(file_path).lower():
+                print("File appears to be a project management file, trying row 2 as header")
+                try:
+                    pm_df = pd.read_excel(file_path, engine='openpyxl', nrows=15, header=2)
+                    pm_columns = [str(col).lower() for col in pm_df.columns]
+                    pm_keyword_matches = sum(1 for col in pm_columns for keyword in project_mgmt_keywords if keyword in col)
+                    
+                    if pm_keyword_matches > keyword_matches:
+                        best_df = pm_df
+                        best_header_row = 2
+                        print("Using row 2 as header for project management file")
+                except Exception as e:
+                    print(f"Error trying row 2 as header: {str(e)}")
+            
+            print(f"Selected header row: {best_header_row}")
+            print(f"Final columns: {best_df.columns.tolist()}")
             
             # Handle potential NaN values first
-            sample_df = sample_df.fillna('')
+            best_df = best_df.fillna('')
             
             # Convert all numeric columns to string to ensure consistent representation
-            for col in sample_df.select_dtypes(include=['number']).columns:
-                sample_df[col] = sample_df[col].astype(str)
-                
-            # Note: We don't convert to category type here since we're just previewing
-            # and don't need the memory optimization
+            for col in best_df.select_dtypes(include=['number']).columns:
+                best_df[col] = best_df[col].astype(str)
                 
             # Convert DataFrame to a standardized format
-            columns = sample_df.columns.tolist()
+            columns = best_df.columns.tolist()
             
             # Convert rows to list of dictionaries
-            rows = sample_df.to_dict(orient='records')
+            rows = best_df.to_dict(orient='records')
             
             # Post-process the rows to ensure consistent string representation
             for row_dict in rows:
