@@ -72,14 +72,21 @@
     </div>
   </div>
   
-  <!-- Excel File Preview -->
-  <div *ngIf="sourceFile && targetFile && 
-              getFileExtension(sourceFile.name) === '.xlsx' && 
-              getFileExtension(targetFile.name) === '.xlsx'" class="file-preview-section">
-    <h3 class="preview-header">Excel File Preview <span class="preview-subtext">(showing first 5 rows and columns)</span></h3>
+  <!-- Excel/CSV File Previews (Side by Side) -->
+  <div *ngIf="(sourceFile && 
+              (getFileExtension(sourceFile.name) === '.xlsx' || 
+               getFileExtension(sourceFile.name) === '.csv')) || 
+              (targetFile && 
+              (getFileExtension(targetFile.name) === '.xlsx' || 
+               getFileExtension(targetFile.name) === '.csv'))" 
+       class="file-preview-section">
+    <h3 class="preview-header">File Preview <span class="preview-subtext">(showing first 5 rows and columns)</span></h3>
     
     <div class="file-previews-horizontal">
-      <div class="file-preview">
+      <!-- Source File Preview -->
+      <div class="file-preview" *ngIf="sourceFile && 
+                (getFileExtension(sourceFile.name) === '.xlsx' || 
+                 getFileExtension(sourceFile.name) === '.csv')">
         <div class="file-preview-header">{{ sourceFile.name }}</div>
         <div class="preview-table-container" *ngIf="sourceFilePreviewData">
           <table class="preview-table">
@@ -97,9 +104,15 @@
             </tbody>
           </table>
         </div>
+        <div *ngIf="!sourceFilePreviewData" class="no-preview-message">
+          Loading preview...
+        </div>
       </div>
       
-      <div class="file-preview">
+      <!-- Target File Preview -->
+      <div class="file-preview" *ngIf="targetFile && 
+                (getFileExtension(targetFile.name) === '.xlsx' || 
+                 getFileExtension(targetFile.name) === '.csv')">
         <div class="file-preview-header">{{ targetFile.name }}</div>
         <div class="preview-table-container" *ngIf="targetFilePreviewData">
           <table class="preview-table">
@@ -116,6 +129,9 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div *ngIf="!targetFilePreviewData" class="no-preview-message">
+          Loading preview...
         </div>
       </div>
     </div>

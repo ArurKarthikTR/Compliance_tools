@@ -204,14 +204,22 @@ export class ComparisonResultsComponent implements OnChanges {
         columnMap.set(column, column);
       });
     } else {
-      // For XLSX files, try to find a header row (usually row 2 or 3)
-      for (let i = 0; i < this.rows.length; i++) {
+      // For XLSX files, try to find a header row (usually row 0 or 1)
+      // Only check the first few rows to avoid misidentifying data rows as headers
+      const maxRowsToCheck = Math.min(5, this.rows.length);
+      
+      console.log(`Looking for header row in first ${maxRowsToCheck} rows of XLSX file`);
+      
+      for (let i = 0; i < maxRowsToCheck; i++) {
         const row = this.rows[i];
         let potentialHeaderCount = 0;
+        let totalCellCount = 0;
         
         // Check if this row has values that look like headers
         this.columns.forEach(column => {
           const cell = row.cells[column];
+          totalCellCount++;
+          
           if (cell && cell.sourceValue && typeof cell.sourceValue === 'string' && 
               !cell.sourceValue.includes('(empty)') && 
               cell.sourceValue !== 'Project Management Data') {
@@ -219,9 +227,13 @@ export class ComparisonResultsComponent implements OnChanges {
           }
         });
         
-        // If we found multiple potential headers, this is likely our header row
-        if (potentialHeaderCount > 2) {
+        console.log(`Row ${i}: ${potentialHeaderCount} potential headers out of ${totalCellCount} cells`);
+        
+        // If we found multiple potential headers and they make up most of the row,
+        // this is likely our header row
+        if (potentialHeaderCount > 2 && potentialHeaderCount >= totalCellCount * 0.5) {
           headerRowIndex = i;
+          console.log(`Found header row at index ${i}`);
           break;
         }
       }
@@ -269,6 +281,8 @@ export class ComparisonResultsComponent implements OnChanges {
     let changedValuesCount = 0;
     let removedValuesCount = 0;
     
+    console.log(`Processing data rows starting from index ${dataStartIndex} (out of ${this.rows.length} total rows)`);
+    
     for (let i = dataStartIndex; i < this.rows.length; i++) {
       const row = this.rows[i];
       const rowIndex = i - dataStartIndex;
@@ -278,18 +292,21 @@ export class ComparisonResultsComponent implements OnChanges {
       }
       
       const rowData = rowMap.get(rowIndex)!;
+      let hasData = false;
       
       this.columns.forEach((column, colIndex) => {
-        const cell = row.cells[column];
+        const cell = row.cells ? row.cells[column] : null;
         const mappedColumn = columnMap.get(column) || column;
         
+        // Always set a value for each column, even if cell is null/undefined
+        // This ensures we don't skip any cells in the display
         if (cell) {
           // For display, use the source value by default
           rowData.set(mappedColumn, cell.sourceValue);
           
           // Store the status for highlighting
           const key = `${rowIndex}-${mappedColumn}`;
-          diffStatusMap.set(key, cell.status);
+          diffStatusMap.set(key, cell.status || 'match');
           
           // If values are different, store both values
           if (cell.status === 'different') {
@@ -301,12 +318,30 @@ export class ComparisonResultsComponent implements OnChanges {
           } else if (cell.status === 'source_only') {
             removedValuesCount++;
           }
+          
+          if (cell.sourceValue !== undefined && cell.sourceValue !== null) {
+            hasData = true;
+          }
+        } else {
+          // If cell is null/undefined, set an empty value
+          rowData.set(mappedColumn, null);
         }
       });
+      
+      // Log if we found a row with no data
+      if (!hasData) {
+        console.log(`Row ${i} (index ${rowIndex} after header) has no data`);
+      }
     }
     
+    console.log(`Processed ${rowMap.size} data rows`);
+    
     // Convert to array format for template
-    Array.from(rowMap.entries()).sort((a, b) => a[0] - b[0]).forEach(([rowIndex, rowData]) => {
+    const sortedRows = Array.from(rowMap.entries()).sort((a, b) => a[0] - b[0]);
+    
+    console.log(`Converting ${sortedRows.length} rows to array format`);
+    
+    sortedRows.forEach(([rowIndex, rowData]) => {
       const rowArray = [rowIndex + 1]; // Add row number (1-based)
       
       actualColumns.forEach(column => {
@@ -315,6 +350,23 @@ export class ComparisonResultsComponent implements OnChanges {
       
       result.rows.push(rowArray);
     });
+    
+    console.log(`Final result has ${result.rows.length} rows`);
+    
+    // Check if we have the expected number of rows
+    const expectedRows = this.rows.length - dataStartIndex;
+    if (result.rows.length < expectedRows) {
+      console.warn(`Missing rows! Expected ${expectedRows}, got ${result.rows.length}`);
+      
+      // Add empty rows to match the expected count
+      for (let i = result.rows.length; i < expectedRows; i++) {
+        const emptyRow = [i + 1]; // Row number (1-based)
+        actualColumns.forEach(() => emptyRow.push(0)); // Use 0 as a numeric value
+        result.rows.push(emptyRow);
+      }
+      
+      console.log(`Added ${expectedRows - result.rows.length} empty rows to match expected count`);
+    }
     
     result.diffMap = diffStatusMap;
     result.diffValueMap = diffValueMap;
@@ -435,10 +487,13 @@ export class ComparisonResultsComponent implements OnChanges {
     this.resetView.emit();
   }
   
-  getCellClass(rowIndex: number, column: string): string {
+  getCellClass(rowIndex: number | string, column: string): string {
     if (!column) return '';
     
-    const key = `${rowIndex}-${column}`;
+    // Ensure rowIndex is a number for key generation
+    const numericRowIndex = typeof rowIndex === 'string' ? parseInt(rowIndex, 10) : rowIndex;
+    
+    const key = `${numericRowIndex}-${column}`;
     const status = this.tableData.diffMap?.get(key);
     
     if (!status) return '';
@@ -456,8 +511,8 @@ export class ComparisonResultsComponent implements OnChanges {
         break;
       case 'different':
         // Check if we have both source and target values
-        const sourceKey = `${rowIndex}-${column}-source`;
-        const targetKey = `${rowIndex}-${column}-target`;
+        const sourceKey = `${numericRowIndex}-${column}-source`;
+        const targetKey = `${numericRowIndex}-${column}-target`;
         if (this.tableData.diffMap?.has(sourceKey) && this.tableData.diffMap?.has(targetKey)) {
           classNames = 'different-value';
         } else {
@@ -473,7 +528,7 @@ export class ComparisonResultsComponent implements OnChanges {
     }
     
     // Add content-type class
-    const contentClass = this.getCellContentClass(rowIndex, column);
+    const contentClass = this.getCellContentClass(numericRowIndex, column);
     if (contentClass) {
       classNames += ' ' + contentClass;
     }
@@ -487,39 +542,49 @@ export class ComparisonResultsComponent implements OnChanges {
     return path; // Return path unchanged to preserve array indices
   }
   
-  getCellContentClass(rowIndex: number, column: string): string {
-    // Get the cell value
-    const row = this.filteredRows[rowIndex];
-    if (!row) return '';
-    
-    const colIndex = this.tableData.headers.indexOf(column);
-    if (colIndex < 0) return '';
-    
-    const value = row[colIndex];
-    
-    // Check if it's a numeric value
-    if (value === null || value === undefined) return '';
-    
-    const strValue = String(value).trim();
-    
-    // Check if it's a number (including decimal points)
-    if (/^-?\d+(\.\d+)?$/.test(strValue)) {
+  getCellContentClass(rowIndex: number | string, column: string): string {
+    try {
+      // Ensure rowIndex is a number
+      const numericRowIndex = typeof rowIndex === 'string' ? parseInt(rowIndex, 10) : rowIndex;
+      
+      // Get the cell value
+      const row = this.filteredRows[numericRowIndex];
+      if (!row) return '';
+      
+      const colIndex = this.tableData.headers.indexOf(column);
+      if (colIndex < 0) return '';
+      
+      // Handle the case where colIndex is a string
+      const numericColIndex = typeof colIndex === 'string' ? parseInt(colIndex, 10) : colIndex;
+      const value = row[numericColIndex];
+      
+      // Ensure we're working with a valid value
+      if (value === null || value === undefined || value === '') return '';
+      
+      const strValue = String(value).trim();
+      
+      // Check if it's a number (including decimal points)
+      if (/^-?\d+(\.\d+)?$/.test(strValue)) {
+        return 'numeric-content';
+      }
+      
+      // Check if it's a date format
+      if (/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(strValue) || 
+          /^\d{2,4}[-/]\d{1,2}[-/]\d{1,2}$/.test(strValue)) {
+        return 'numeric-content';
+      }
+      
+      // For longer text content
+      if (strValue.length > 10 || strValue.includes(' ')) {
+        return 'text-content';
+      }
+      
+      // Default to numeric for short values without spaces
       return 'numeric-content';
+    } catch (error) {
+      console.error('Error in getCellContentClass:', error);
+      return '';
     }
-    
-    // Check if it's a date format
-    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(strValue) || 
-        /^\d{2,4}[-/]\d{1,2}[-/]\d{1,2}$/.test(strValue)) {
-      return 'numeric-content';
-    }
-    
-    // For longer text content
-    if (strValue.length > 10 || strValue.includes(' ')) {
-      return 'text-content';
-    }
-    
-    // Default to numeric for short values without spaces
-    return 'numeric-content';
   }
   
   downloadResults(): void {
