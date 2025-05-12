@@ -109,20 +109,12 @@ export class FileUploadComponent implements OnInit, OnChanges {
       this.sourceFileSize = this.formatFileSize(file.size);
       this.validateFiles();
       
-<<<<<<< HEAD
-      // Handle different file types
-      const fileExt = this.getFileExtension(file.name);
-      if (fileExt === '.xlsx') {
-=======
       // Load preview for Excel and CSV files
       const fileExt = this.getFileExtension(file.name);
       if (fileExt === '.xlsx' || fileExt === '.csv') {
->>>>>>> 09f394fed29d5a2868158cf9b7acd221e73fab8c
         this.loadFilePreview(file, 'source');
       } else if (fileExt === '.xml') {
         this.readXmlFile(file, 'source');
-      } else if (fileExt === '.csv') {
-        this.loadFilePreview(file, 'source'); // Adding CSV preview
       } else {
         this.sourceFilePreviewData = null;
         this.sourceFileContent = null;
@@ -143,20 +135,12 @@ export class FileUploadComponent implements OnInit, OnChanges {
       this.targetFileSize = this.formatFileSize(file.size);
       this.validateFiles();
       
-<<<<<<< HEAD
-      // Handle different file types
-      const fileExt = this.getFileExtension(file.name);
-      if (fileExt === '.xlsx') {
-=======
       // Load preview for Excel and CSV files
       const fileExt = this.getFileExtension(file.name);
       if (fileExt === '.xlsx' || fileExt === '.csv') {
->>>>>>> 09f394fed29d5a2868158cf9b7acd221e73fab8c
         this.loadFilePreview(file, 'target');
       } else if (fileExt === '.xml') {
         this.readXmlFile(file, 'target');
-      } else if (fileExt === '.csv') {
-        this.loadFilePreview(file, 'target'); // Adding CSV preview
       } else {
         this.targetFilePreviewData = null;
         this.targetFileContent = null;
@@ -173,7 +157,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
     
     console.log(`Loading preview for ${fileType} file: ${file.name}`);
     
-<<<<<<< HEAD
     // Show loading indicator or placeholder while waiting for preview
     if (fileType === 'source') {
       this.sourceFilePreviewData = { loading: true, columns: ['Loading...'], rows: [] };
@@ -181,8 +164,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
       this.targetFilePreviewData = { loading: true, columns: ['Loading...'], rows: [] };
     }
     
-=======
->>>>>>> 09f394fed29d5a2868158cf9b7acd221e73fab8c
     this.http.post('http://localhost:5000/api/file-difference/preview', formData)
       .subscribe({
         next: (result: any) => {
@@ -196,11 +177,7 @@ export class FileUploadComponent implements OnInit, OnChanges {
             console.log('Target file preview data set:', this.targetFilePreviewData);
           }
           
-<<<<<<< HEAD
-          // Emit file information when preview data is loaded
-=======
           // Emit file information when preview is loaded
->>>>>>> 09f394fed29d5a2868158cf9b7acd221e73fab8c
           this.emitFileInfo();
         },
         error: (error) => {
