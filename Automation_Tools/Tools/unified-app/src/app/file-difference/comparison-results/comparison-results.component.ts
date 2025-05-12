@@ -193,47 +193,57 @@ export class ComparisonResultsComponent implements OnChanges {
     const actualColumns: string[] = [];
     const columnMap = new Map<string, string>();
     
-    // First, find the header row (usually row 2 or 3)
+    // Variable to track header row index (used for both CSV and XLSX)
     let headerRowIndex = -1;
     
-    for (let i = 0; i < this.rows.length; i++) {
-      const row = this.rows[i];
-      let potentialHeaderCount = 0;
-      
-      // Check if this row has values that look like headers
-      this.columns.forEach(column => {
-        const cell = row.cells[column];
-        if (cell && cell.sourceValue && typeof cell.sourceValue === 'string' && 
-            !cell.sourceValue.includes('(empty)') && 
-            cell.sourceValue !== 'Project Management Data') {
-          potentialHeaderCount++;
-        }
-      });
-      
-      // If we found multiple potential headers, this is likely our header row
-      if (potentialHeaderCount > 2) {
-        headerRowIndex = i;
-        break;
-      }
-    }
-    
-    // If we found a header row, use it to map column names
-    if (headerRowIndex >= 0) {
-      const headerRow = this.rows[headerRowIndex];
-      
-      this.columns.forEach(column => {
-        const cell = headerRow.cells[column];
-        if (cell && cell.sourceValue) {
-          columnMap.set(column, String(cell.sourceValue));
-          actualColumns.push(String(cell.sourceValue));
-        }
-      });
-    } else {
-      // Fallback: just use the original column names
+    // For CSV files, use the column names directly from the data
+    if (this.fileType === 'csv') {
+      // Use the original column names from the CSV file
       this.columns.forEach(column => {
         actualColumns.push(column);
         columnMap.set(column, column);
       });
+    } else {
+      // For XLSX files, try to find a header row (usually row 2 or 3)
+      for (let i = 0; i < this.rows.length; i++) {
+        const row = this.rows[i];
+        let potentialHeaderCount = 0;
+        
+        // Check if this row has values that look like headers
+        this.columns.forEach(column => {
+          const cell = row.cells[column];
+          if (cell && cell.sourceValue && typeof cell.sourceValue === 'string' && 
+              !cell.sourceValue.includes('(empty)') && 
+              cell.sourceValue !== 'Project Management Data') {
+            potentialHeaderCount++;
+          }
+        });
+        
+        // If we found multiple potential headers, this is likely our header row
+        if (potentialHeaderCount > 2) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+      
+      // If we found a header row, use it to map column names
+      if (headerRowIndex >= 0) {
+        const headerRow = this.rows[headerRowIndex];
+        
+        this.columns.forEach(column => {
+          const cell = headerRow.cells[column];
+          if (cell && cell.sourceValue) {
+            columnMap.set(column, String(cell.sourceValue));
+            actualColumns.push(String(cell.sourceValue));
+          }
+        });
+      } else {
+        // Fallback: just use the original column names
+        this.columns.forEach(column => {
+          actualColumns.push(column);
+          columnMap.set(column, column);
+        });
+      }
     }
     
     const result: TableData = {
