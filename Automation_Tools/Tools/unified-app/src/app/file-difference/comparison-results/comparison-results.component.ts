@@ -166,26 +166,124 @@ export class ComparisonResultsComponent implements OnChanges {
     
     // For CSV/XLSX files, apply filtering
     if (this.showOnlyDifferences) {
-      // Filter to show only rows with differences
-      this.filteredRows = this.tableData.rows.filter((row, rowIndex) => {
-        // Check if any cell in this row has a difference
+      // Create a set to track rows with actual differences
+      const rowsWithDifferences = new Set<number>();
+      
+      // First, identify all rows that have actual differences (red and green values)
+      for (let rowIndex = 0; rowIndex < this.tableData.rows.length; rowIndex++) {
+        let hasRealDifference = false;
+        
         for (let colIndex = 1; colIndex < this.tableData.headers.length; colIndex++) {
           const column = this.tableData.headers[colIndex];
           const key = `${rowIndex}-${column}`;
           const status = this.tableData.diffMap.get(key);
           
-          if (status === 'different' || status === 'source_only' || status === 'target_only') {
-            return true;
+          // Check for cells with actual differences (red and green values)
+          if (status === 'different') {
+            const diffValues = this.tableData.diffValueMap?.get(key);
+            
+            // Only consider it a difference if both values exist and are different
+            if (diffValues && 
+                diffValues.original !== undefined && diffValues.changed !== undefined &&
+                diffValues.original !== diffValues.changed) {
+              
+              // Convert to strings for comparison
+              const originalStr = diffValues.original !== null ? String(diffValues.original) : '';
+              const changedStr = diffValues.changed !== null ? String(diffValues.changed) : '';
+              
+              // Only consider it a difference if the string values are different
+              if (originalStr !== changedStr) {
+                hasRealDifference = true;
+                break;
+              }
+            }
+          } else if (status === 'source_only' || status === 'target_only') {
+            // These are also considered differences (red or green values)
+            hasRealDifference = true;
+            break;
           }
         }
-        return false;
-      });
+        
+        // Only add rows that have actual differences (red and green values)
+        if (hasRealDifference) {
+          rowsWithDifferences.add(rowIndex);
+        }
+      }
+      
+      console.log(`Found ${rowsWithDifferences.size} rows with actual differences (red and green values)`);
+      
+      // Filter to only show rows with differences
+      this.filteredRows = this.tableData.rows.filter((row, rowIndex) => 
+        rowsWithDifferences.has(rowIndex)
+      );
+      
+      // Create a new diffValueMap that maps the new row indices to the original values
+      if (this.tableData.diffValueMap) {
+        const newDiffValueMap = new Map<string, {original: any, changed: any}>();
+        const originalRowIndices = Array.from(rowsWithDifferences);
+        
+        // For each row in the filtered rows
+        this.filteredRows.forEach((row, newRowIndex) => {
+          // Get the original row index
+          const originalRowIndex = originalRowIndices[newRowIndex];
+          
+          // For each column
+          for (let colIndex = 1; colIndex < this.tableData.headers.length; colIndex++) {
+            const column = this.tableData.headers[colIndex];
+            const originalKey = `${originalRowIndex}-${column}`;
+            const newKey = `${newRowIndex}-${column}`;
+            
+            // If there's a diff value for this cell, copy it to the new map with the new row index
+            if (this.tableData.diffValueMap?.has(originalKey)) {
+              newDiffValueMap.set(newKey, this.tableData.diffValueMap.get(originalKey)!);
+            }
+          }
+        });
+        
+        // Replace the original diffValueMap with the new one
+        this.tableData.diffValueMap = newDiffValueMap;
+      }
+      
+      console.log(`Filtered to ${this.filteredRows.length} rows with actual differences (red and green values)`);
     } else {
       // Show all rows
       this.filteredRows = [...this.tableData.rows];
+      
+      // Restore the original diffValueMap
+      if (this.tableData.diffValueMap) {
+        const originalDiffValueMap = new Map<string, {original: any, changed: any}>();
+        
+        // For each row
+        this.tableData.rows.forEach((row, rowIndex) => {
+          // For each column
+          for (let colIndex = 1; colIndex < this.tableData.headers.length; colIndex++) {
+            const column = this.tableData.headers[colIndex];
+            const key = `${rowIndex}-${column}`;
+            const status = this.tableData.diffMap.get(key);
+            
+            // If this cell has a difference status
+            if (status === 'different') {
+              // Get the original and changed values from the row data
+              const originalValue = row[colIndex];
+              const changedValue = this.tableData.diffValueMap?.get(key)?.changed;
+              
+              // Add to the original diffValueMap
+              if (changedValue !== undefined) {
+                originalDiffValueMap.set(key, {
+                  original: originalValue,
+                  changed: changedValue
+                });
+              }
+            }
+          }
+        });
+        
+        // Replace the diffValueMap with the original one
+        this.tableData.diffValueMap = originalDiffValueMap;
+      }
+      
+      console.log(`Showing all ${this.filteredRows.length} rows`);
     }
-    
-    console.log(`Filtered to ${this.filteredRows.length} rows (showing only differences: ${this.showOnlyDifferences})`);
   }
   
   transformToTableFormat(): TableData {
@@ -204,58 +302,22 @@ export class ComparisonResultsComponent implements OnChanges {
         columnMap.set(column, column);
       });
     } else {
-      // For XLSX files, try to find a header row (usually row 0 or 1)
-      // Only check the first few rows to avoid misidentifying data rows as headers
-      const maxRowsToCheck = Math.min(5, this.rows.length);
+      // For XLSX files, use the column names directly from the backend
+      // These should already be properly extracted by the backend's Excel processing
+      console.log('Using column names from backend for XLSX file:', this.columns);
       
-      console.log(`Looking for header row in first ${maxRowsToCheck} rows of XLSX file`);
+      // Use the column names as they are
+      this.columns.forEach(column => {
+        // Clean up column names if needed
+        const cleanColumnName = column.replace(/^Unnamed: \d+$/, '').trim();
+        const displayName = cleanColumnName || column; // Use original if cleaned is empty
+        
+        actualColumns.push(displayName);
+        columnMap.set(column, displayName);
+      });
       
-      for (let i = 0; i < maxRowsToCheck; i++) {
-        const row = this.rows[i];
-        let potentialHeaderCount = 0;
-        let totalCellCount = 0;
-        
-        // Check if this row has values that look like headers
-        this.columns.forEach(column => {
-          const cell = row.cells[column];
-          totalCellCount++;
-          
-          if (cell && cell.sourceValue && typeof cell.sourceValue === 'string' && 
-              !cell.sourceValue.includes('(empty)') && 
-              cell.sourceValue !== 'Project Management Data') {
-            potentialHeaderCount++;
-          }
-        });
-        
-        console.log(`Row ${i}: ${potentialHeaderCount} potential headers out of ${totalCellCount} cells`);
-        
-        // If we found multiple potential headers and they make up most of the row,
-        // this is likely our header row
-        if (potentialHeaderCount > 2 && potentialHeaderCount >= totalCellCount * 0.5) {
-          headerRowIndex = i;
-          console.log(`Found header row at index ${i}`);
-          break;
-        }
-      }
-      
-      // If we found a header row, use it to map column names
-      if (headerRowIndex >= 0) {
-        const headerRow = this.rows[headerRowIndex];
-        
-        this.columns.forEach(column => {
-          const cell = headerRow.cells[column];
-          if (cell && cell.sourceValue) {
-            columnMap.set(column, String(cell.sourceValue));
-            actualColumns.push(String(cell.sourceValue));
-          }
-        });
-      } else {
-        // Fallback: just use the original column names
-        this.columns.forEach(column => {
-          actualColumns.push(column);
-          columnMap.set(column, column);
-        });
-      }
+      // Log the column mapping for debugging
+      console.log('Column mapping:', Object.fromEntries(columnMap));
     }
     
     const result: TableData = {
@@ -269,8 +331,9 @@ export class ComparisonResultsComponent implements OnChanges {
       return result;
     }
     
-    // Skip the header row when processing data
-    const dataStartIndex = headerRowIndex >= 0 ? headerRowIndex + 1 : 0;
+    // For XLSX files, we don't need to skip any rows as the backend should have already
+    // identified and used the header row correctly
+    const dataStartIndex = 0;
     
     // Group differences by row
     const rowMap = new Map<number, Map<string, any>>();
@@ -281,7 +344,7 @@ export class ComparisonResultsComponent implements OnChanges {
     let changedValuesCount = 0;
     let removedValuesCount = 0;
     
-    console.log(`Processing data rows starting from index ${dataStartIndex} (out of ${this.rows.length} total rows)`);
+    console.log(`Processing ${this.rows.length} data rows`);
     
     for (let i = dataStartIndex; i < this.rows.length; i++) {
       const row = this.rows[i];
@@ -330,7 +393,7 @@ export class ComparisonResultsComponent implements OnChanges {
       
       // Log if we found a row with no data
       if (!hasData) {
-        console.log(`Row ${i} (index ${rowIndex} after header) has no data`);
+        console.log(`Row ${i} (index ${rowIndex}) has no data`);
       }
     }
     
@@ -358,10 +421,10 @@ export class ComparisonResultsComponent implements OnChanges {
     if (result.rows.length < expectedRows) {
       console.warn(`Missing rows! Expected ${expectedRows}, got ${result.rows.length}`);
       
-      // Add empty rows to match the expected count
+        // Add empty rows to match the expected count
       for (let i = result.rows.length; i < expectedRows; i++) {
         const emptyRow = [i + 1]; // Row number (1-based)
-        actualColumns.forEach(() => emptyRow.push(0)); // Use 0 as a numeric value
+        actualColumns.forEach(() => emptyRow.push(0)); // Use 0 for empty values to avoid type errors
         result.rows.push(emptyRow);
       }
       
@@ -372,6 +435,9 @@ export class ComparisonResultsComponent implements OnChanges {
     result.diffValueMap = diffValueMap;
     result.changedValuesCount = changedValuesCount;
     result.removedValuesCount = removedValuesCount;
+    
+    // Make sure filteredRows is updated with all rows
+    this.filteredRows = [...result.rows];
     
     return result;
   }

@@ -79,29 +79,73 @@ class FileDifferenceService:
             print(f"Processing Excel file: {file_path}")
             start_time = pd.Timestamp.now()
             
-            # Use nrows parameter to check the first few rows to determine header
-            sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10)
+            # First, read a larger sample to analyze the structure
+            analysis_df = pd.read_excel(file_path, engine='openpyxl', header=None, nrows=15)
             
-            # Check if columns are unnamed
-            unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
+            # Check if this is a Project Management file based on filename or content
+            is_project_mgmt = 'project' in os.path.basename(file_path).lower()
             
-            # Determine the header row based on the sample
-            header_row = 0
-            if unnamed_count > len(sample_df.columns) / 2:
-                # Try with header in row 1
-                header_row = 1
-                sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10, header=1)
+            # Look for "Project Management" text in the first few rows
+            for i in range(min(5, len(analysis_df))):
+                row_values = analysis_df.iloc[i].astype(str)
+                row_text = ' '.join(row_values.values)
+                if 'project management' in row_text.lower():
+                    is_project_mgmt = True
+                    break
+            
+            # Special handling for Project Management files
+            if is_project_mgmt:
+                print("Detected Project Management file, using specialized header detection")
+                
+                # Look for rows that contain typical project management column headers
+                pm_keywords = ['project name', 'task', 'assigned', 'start date', 'end date', 'days', 'progress']
+                best_header_row = 0
+                best_match_count = 0
+                
+                for i in range(min(10, len(analysis_df))):
+                    row_values = analysis_df.iloc[i].astype(str)
+                    row_text = ' '.join(row_values.values).lower()
+                    match_count = sum(1 for kw in pm_keywords if kw in row_text)
+                    
+                    if match_count > best_match_count:
+                        best_match_count = match_count
+                        best_header_row = i
+                
+                # If we found a good match, use that row as header
+                if best_match_count >= 3:
+                    header_row = best_header_row
+                    print(f"Using row {header_row} as header for Project Management file (matched {best_match_count} keywords)")
+                else:
+                    # Default to row 2 for project management files if no good match found
+                    header_row = 2
+                    print(f"Using default row 2 as header for Project Management file")
+            else:
+                # Standard header detection for non-project management files
+                # Use nrows parameter to check the first few rows to determine header
+                sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10)
+                
+                # Check if columns are unnamed
                 unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
                 
+                # Determine the header row based on the sample
+                header_row = 0
                 if unnamed_count > len(sample_df.columns) / 2:
-                    # Try with header in row 2
-                    header_row = 2
+                    # Try with header in row 1
+                    header_row = 1
+                    sample_df = pd.read_excel(file_path, engine='openpyxl', nrows=10, header=1)
+                    unnamed_count = sum(1 for col in sample_df.columns if 'Unnamed:' in str(col))
+                    
+                    if unnamed_count > len(sample_df.columns) / 2:
+                        # Try with header in row 2
+                        header_row = 2
             
             print(f"Determined header row: {header_row}")
             
             # Now read the actual data with the determined header row
-            # Use chunksize for better memory management with large files
+            # Read all rows from the Excel file
             df = pd.read_excel(file_path, engine='openpyxl', header=header_row)
+            print(f"Read Excel file with {len(df)} rows and {len(df.columns)} columns")
+            print(f"Column names: {df.columns.tolist()}")
             
             # Handle potential NaN values first
             df = df.fillna('')
@@ -734,7 +778,7 @@ class FileDifferenceService:
             
             # Try to find the actual data rows by examining the file structure
             # First, read a larger sample to analyze the structure
-            analysis_df = pd.read_excel(file_path, engine='openpyxl', nrows=20, header=None)
+            analysis_df = pd.read_excel(file_path, engine='openpyxl', header=None)
             
             # Look for patterns that indicate header rows
             # 1. Look for rows with string values that could be column headers
@@ -756,7 +800,7 @@ class FileDifferenceService:
             
             for header_idx in potential_header_rows + [0]:  # Always include 0 as a fallback
                 try:
-                    test_df = pd.read_excel(file_path, engine='openpyxl', nrows=15, header=header_idx)
+                    test_df = pd.read_excel(file_path, engine='openpyxl', header=header_idx)
                     
                     # Score this header row based on column name quality
                     unnamed_count = sum(1 for col in test_df.columns if 'Unnamed:' in str(col))
@@ -796,7 +840,7 @@ class FileDifferenceService:
                 if data_start_row is not None:
                     print(f"Detected data starting at row {data_start_row}, using row {header_row} as header")
                     try:
-                        best_df = pd.read_excel(file_path, engine='openpyxl', nrows=15, header=header_row)
+                        best_df = pd.read_excel(file_path, engine='openpyxl', header=header_row)
                         best_header_row = header_row
                     except Exception as e:
                         print(f"Error using detected header row {header_row}: {str(e)}")
@@ -804,7 +848,7 @@ class FileDifferenceService:
             # If we still don't have a good dataframe, use the original with default header
             if best_df is None:
                 print("Using default header row")
-                best_df = pd.read_excel(file_path, engine='openpyxl', nrows=15)
+                best_df = pd.read_excel(file_path, engine='openpyxl')
             
             # Check for specific column patterns in Project Management files
             # Look for common column names in project management files
@@ -818,7 +862,7 @@ class FileDifferenceService:
             if keyword_matches < 2 and 'project' in os.path.basename(file_path).lower():
                 print("File appears to be a project management file, trying row 2 as header")
                 try:
-                    pm_df = pd.read_excel(file_path, engine='openpyxl', nrows=15, header=2)
+                    pm_df = pd.read_excel(file_path, engine='openpyxl', header=2)
                     pm_columns = [str(col).lower() for col in pm_df.columns]
                     pm_keyword_matches = sum(1 for col in pm_columns for keyword in project_mgmt_keywords if keyword in col)
                     

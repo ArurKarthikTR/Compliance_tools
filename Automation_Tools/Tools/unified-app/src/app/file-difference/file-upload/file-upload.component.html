@@ -80,7 +80,7 @@
               (getFileExtension(targetFile.name) === '.xlsx' || 
                getFileExtension(targetFile.name) === '.csv'))" 
        class="file-preview-section">
-    <h3 class="preview-header">File Preview <span class="preview-subtext">(showing first 5 rows and columns)</span></h3>
+    <h3 class="preview-header">File Preview <span class="preview-subtext">(showing all rows and columns)</span></h3>
     
     <div class="file-previews-horizontal">
       <!-- Source File Preview -->
@@ -92,12 +92,12 @@
           <table class="preview-table">
             <thead>
               <tr>
-                <th *ngFor="let column of sourceFilePreviewData.columns.slice(0, 5)">{{ column }}</th>
+                <th *ngFor="let column of sourceFilePreviewData.columns">{{ column }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of sourceFilePreviewData.rows.slice(0, 5)">
-                <td *ngFor="let column of sourceFilePreviewData.columns.slice(0, 5)">
+              <tr *ngFor="let row of sourceFilePreviewData.rows">
+                <td *ngFor="let column of sourceFilePreviewData.columns">
                   {{ row[column] }}
                 </td>
               </tr>
@@ -118,12 +118,12 @@
           <table class="preview-table">
             <thead>
               <tr>
-                <th *ngFor="let column of targetFilePreviewData.columns.slice(0, 5)">{{ column }}</th>
+                <th *ngFor="let column of targetFilePreviewData.columns">{{ column }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of targetFilePreviewData.rows.slice(0, 5)">
-                <td *ngFor="let column of targetFilePreviewData.columns.slice(0, 5)">
+              <tr *ngFor="let row of targetFilePreviewData.rows">
+                <td *ngFor="let column of targetFilePreviewData.columns">
                   {{ row[column] }}
                 </td>
               </tr>
