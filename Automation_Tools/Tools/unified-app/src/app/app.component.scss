@@ -8,6 +8,10 @@
   overflow-x: hidden;
 }
 
+.app-content {
+  flex: 1;
+}
+
 // Slide-out menu
 .slide-menu {
   position: fixed;
@@ -370,7 +374,9 @@
     background-size: cover;
     background-position: center;
     position: relative;
-    overflow: auto;
+    overflow: hidden; // Prevent scrolling at the page level
+    display: flex;
+    flex-direction: column;
     
     &::before {
       content: '';
@@ -395,6 +401,11 @@
       router-outlet + * {
         position: relative;
         z-index: 1;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
         
         // Reset background for tool components
         .container {
@@ -414,6 +425,7 @@
   color: #fff;
   padding: 0.25rem 2rem;
   text-align: center;
+  margin-top: 0;
   
   p {
     margin: 0;

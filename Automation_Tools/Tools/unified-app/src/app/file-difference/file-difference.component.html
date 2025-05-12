@@ -1,10 +1,4 @@
 <div class="file-difference-container">
-  <div class="header">
-    <h1>File Difference Tool</h1>
-    <p class="description">
-      Upload and compare two files to identify differences between them. Supports CSV, XLSX, and XML files.
-    </p>
-  </div>
 
   <div class="error-message" *ngIf="errorMessage">
     <p>{{ errorMessage }}</p>
@@ -17,9 +11,19 @@
 
   <app-file-upload 
     *ngIf="!comparisonData" 
+    [selectedFileType]="selectedFileType"
+    [inputSourceFile]="sourceFile"
+    [inputTargetFile]="targetFile"
+    [inputSourceFileSize]="sourceFileSize"
+    [inputTargetFileSize]="targetFileSize"
+    [inputSourceFilePreviewData]="sourceFilePreviewData"
+    [inputTargetFilePreviewData]="targetFilePreviewData"
+    [inputSourceFileContent]="sourceFileContent"
+    [inputTargetFileContent]="targetFileContent"
     (comparisonResults)="handleComparisonResults($event)"
     (loading)="handleLoading($event)"
-    (error)="handleError($event)">
+    (error)="handleError($event)"
+    (fileInfoUpdated)="storeFileInformation($event)">
   </app-file-upload>
 
   <app-comparison-results 

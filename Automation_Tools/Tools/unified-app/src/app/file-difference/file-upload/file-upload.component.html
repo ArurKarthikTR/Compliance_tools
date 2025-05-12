@@ -7,13 +7,20 @@
           type="file" 
           id="sourceFile" 
           (change)="onSourceFileChange($event)" 
-          accept=".csv,.xml,.xlsx"
+          (click)="onSourceFileSelect()"
+          [accept]="selectedFileType ? '.' + selectedFileType : '.csv,.xml,.xlsx'"
           [disabled]="isLoading"
         >
-        <label for="sourceFile" class="file-label">
-          <span *ngIf="!sourceFile">Choose file</span>
-          <span *ngIf="sourceFile">{{ sourceFile.name }}</span>
+        <label for="sourceFile" class="file-label" [class.selecting]="sourceFileSelecting">
+          <span *ngIf="!sourceFile && !sourceFileSelecting">Choose file</span>
+          <span *ngIf="!sourceFile && sourceFileSelecting">Selecting file...</span>
+          <span *ngIf="sourceFile" class="file-name">{{ sourceFile.name }}</span>
         </label>
+        
+        <div *ngIf="sourceFile" class="file-info">
+          <div class="file-size">Size: {{ sourceFileSize }}</div>
+          <div class="file-type">Type: {{ getFileTypeDescription(getFileExtension(sourceFile.name)) }}</div>
+        </div>
       </div>
     </div>
     
@@ -24,41 +31,118 @@
           type="file" 
           id="targetFile" 
           (change)="onTargetFileChange($event)" 
-          accept=".csv,.xml,.xlsx"
+          (click)="onTargetFileSelect()"
+          [accept]="selectedFileType ? '.' + selectedFileType : '.csv,.xml,.xlsx'"
           [disabled]="isLoading"
         >
-        <label for="targetFile" class="file-label">
-          <span *ngIf="!targetFile">Choose file</span>
-          <span *ngIf="targetFile">{{ targetFile.name }}</span>
+        <label for="targetFile" class="file-label" [class.selecting]="targetFileSelecting">
+          <span *ngIf="!targetFile && !targetFileSelecting">Choose file</span>
+          <span *ngIf="!targetFile && targetFileSelecting">Selecting file...</span>
+          <span *ngIf="targetFile" class="file-name">{{ targetFile.name }}</span>
         </label>
+        
+        <div *ngIf="targetFile" class="file-info">
+          <div class="file-size">Size: {{ targetFileSize }}</div>
+          <div class="file-type">Type: {{ getFileTypeDescription(getFileExtension(targetFile.name)) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- XML File Preview -->
+  <div *ngIf="sourceFile && targetFile && 
+              getFileExtension(sourceFile.name) === '.xml' && 
+              getFileExtension(targetFile.name) === '.xml'" class="file-preview-section">
+    <h3 class="preview-header">XML File Preview</h3>
+    
+    <div class="file-previews-horizontal">
+      <div class="file-preview xml-preview">
+        <div class="file-preview-header">Source File: {{ sourceFile.name }}</div>
+        <div class="xml-preview-content" *ngIf="sourceFileContent">
+          <pre>{{ sourceFileContent }}</pre>
+        </div>
+      </div>
+      
+      <div class="file-preview xml-preview">
+        <div class="file-preview-header">Target File: {{ targetFile.name }}</div>
+        <div class="xml-preview-content" *ngIf="targetFileContent">
+          <pre>{{ targetFileContent }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Excel File Preview -->
+  <div *ngIf="sourceFile && targetFile && 
+              getFileExtension(sourceFile.name) === '.xlsx' && 
+              getFileExtension(targetFile.name) === '.xlsx'" class="file-preview-section">
+    <h3 class="preview-header">Excel File Preview <span class="preview-subtext">(showing first 5 rows and columns)</span></h3>
+    
+    <div class="file-previews-horizontal">
+      <div class="file-preview">
+        <div class="file-preview-header">{{ sourceFile.name }}</div>
+        <div class="preview-table-container" *ngIf="sourceFilePreviewData">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th *ngFor="let column of sourceFilePreviewData.columns.slice(0, 5)">{{ column }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of sourceFilePreviewData.rows.slice(0, 5)">
+                <td *ngFor="let column of sourceFilePreviewData.columns.slice(0, 5)">
+                  {{ row[column] }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="file-preview">
+        <div class="file-preview-header">{{ targetFile.name }}</div>
+        <div class="preview-table-container" *ngIf="targetFilePreviewData">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th *ngFor="let column of targetFilePreviewData.columns.slice(0, 5)">{{ column }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of targetFilePreviewData.rows.slice(0, 5)">
+                <td *ngFor="let column of targetFilePreviewData.columns.slice(0, 5)">
+                  {{ row[column] }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
   
   <div class="error-message" *ngIf="errorMessage">
-    {{ errorMessage }}
+    <i class="error-icon">⚠️</i> {{ errorMessage }}
   </div>
   
   <div class="actions">
     <button 
       class="compare-button" 
       (click)="compareFiles()" 
-      [disabled]="!sourceFile || !targetFile || isLoading || !!errorMessage"
+      [disabled]="!sourceFile || !targetFile || isLoading || !!errorMessage || sourceFileSelecting || targetFileSelecting"
     >
       <span *ngIf="!isLoading">Compare Files</span>
-      <span *ngIf="isLoading">Comparing...</span>
+      <span *ngIf="isLoading">
+        <i class="loading-spinner"></i> Comparing...
+      </span>
     </button>
     
     <button 
       class="reset-button" 
       (click)="resetForm()" 
-      [disabled]="isLoading"
+      [disabled]="isLoading || sourceFileSelecting || targetFileSelecting"
     >
       Reset
     </button>
-  </div>
-  
-  <div class="supported-formats">
-    <p>Supported file formats: CSV, XML, XLSX</p>
   </div>
 </div>

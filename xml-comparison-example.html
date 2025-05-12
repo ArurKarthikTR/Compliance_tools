@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML Comparison Results with Colored Differences</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .comparison-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        .file-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .file-box {
+            flex: 1;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .file-box h3 {
+            margin-top: 0;
+            color: #555;
+            font-size: 18px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #444;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .node-path {
+            font-family: monospace;
+            word-break: break-all;
+            color: #555;
+            font-weight: 500;
+        }
+        .source-value {
+            background-color: rgba(220, 53, 69, 0.15);
+            color: #dc3545;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid rgba(220, 53, 69, 0.4);
+            display: inline-block;
+        }
+        .target-value {
+            background-color: rgba(40, 167, 69, 0.15);
+            color: #28a745;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid rgba(40, 167, 69, 0.4);
+            display: inline-block;
+        }
+        .source-only {
+            background-color: rgba(0, 123, 255, 0.15);
+            color: #0d6efd;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid rgba(0, 123, 255, 0.4);
+            display: inline-block;
+        }
+        .target-only {
+            background-color: rgba(108, 117, 125, 0.15);
+            color: #6c757d;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid rgba(108, 117, 125, 0.4);
+            display: inline-block;
+        }
+        .match {
+            color: #333;
+            padding: 3px 8px;
+        }
+        .empty {
+            color: #aaa;
+            font-style: italic;
+            padding: 3px 8px;
+        }
+        .summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-box {
+            flex: 1;
+            min-width: 150px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
+        }
+        
+        .summary-box .label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .summary-box .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .summary-box:nth-child(1) .value {
+            color: #0d6efd;
+        }
+        
+        .summary-box:nth-child(2) .value {
+            color: #28a745;
+        }
+        
+        .summary-box:nth-child(3) .value {
+            color: #dc3545;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            flex-wrap: wrap;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .red-box {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.4);
+        }
+        .green-box {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.4);
+        }
+        .blue-box {
+            background-color: rgba(0, 123, 255, 0.2);
+            border: 1px solid rgba(0, 123, 255, 0.4);
+        }
+        .gray-box {
+            background-color: rgba(108, 117, 125, 0.2);
+            border: 1px solid rgba(108, 117, 125, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <h1>XML Comparison Results with Complete Node Traversal</h1>
+    
+    <div class="summary">
+        <div class="summary-box">
+            <div class="label">Total Nodes</div>
+            <div class="value">24</div>
+        </div>
+        <div class="summary-box">
+            <div class="label">Matching Nodes</div>
+            <div class="value">5</div>
+        </div>
+        <div class="summary-box">
+            <div class="label">Differing Nodes</div>
+            <div class="value">19</div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box red-box"></div>
+            <span>Original Value (Source)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box green-box"></div>
+            <span>Changed Value (Target)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box blue-box"></div>
+            <span>Only in Source</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box gray-box"></div>
+            <span>Only in Target</span>
+        </div>
+    </div>
+    
+    <div class="comparison-container">
+        <div class="file-info">
+            <div class="file-box">
+                <h3>Source File</h3>
+                <p>myXMLFile0_3.xml</p>
+                <code>&lt;root&gt;<br>
+                    &nbsp;&nbsp;&lt;person&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;firstname&gt;Orsola&lt;/firstname&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;lastname&gt;Stefa&lt;/lastname&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;city&gt;Bogotá&lt;/city&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;country&gt;Cambodia&lt;/country&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;firstname2&gt;Silvana&lt;/firstname2&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;lastname2&gt;Carmena&lt;/lastname2&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;email&gt;Silvana.Carmena@yopmail.com&lt;/email&gt;<br>
+                    &nbsp;&nbsp;&lt;/person&gt;<br>
+                &lt;/root&gt;</code>
+            </div>
+            <div class="file-box">
+                <h3>Target File</h3>
+                <p>myXMLFile0_4.xml</p>
+                <code>&lt;body&gt;<br>
+                    &nbsp;&nbsp;&lt;class&gt;&lt;/class&gt;<br>
+                    &nbsp;&nbsp;&lt;date&gt;1990-11-20&lt;/date&gt;<br>
+                    &nbsp;&nbsp;&lt;regEx&gt;helloooooo world&lt;/regEx&gt;<br>
+                    &nbsp;&nbsp;&lt;enum&gt;online&lt;/enum&gt;<br>
+                    &nbsp;&nbsp;&lt;elt&gt;Marika&lt;/elt&gt;&lt;elt&gt;Nessie&lt;/elt&gt;<br>
+                    &nbsp;&nbsp;&lt;elt&gt;Cristine&lt;/elt&gt;&lt;elt&gt;Kirbee&lt;/elt&gt;<br>
+                    &nbsp;&nbsp;&lt;elt&gt;Phedra&lt;/elt&gt;<br>
+                    &nbsp;&nbsp;&lt;Annora&gt;<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;age&gt;34&lt;/age&gt;<br>
+                    &nbsp;&nbsp;&lt;/Annora&gt;<br>
+                &lt;/body&gt;</code>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Node Path</th>
+                    <th>Source Value</th>
+                    <th>Target Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Root elements comparison -->
+                <tr>
+                    <td class="node-path">root</td>
+                    <td><span class="source-only">root</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-only">body</span></td>
+                </tr>
+                
+                <!-- Elements in source -->
+                <tr>
+                    <td class="node-path">root/person</td>
+                    <td><span class="source-only">person</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">root/person/firstname</td>
+                    <td><span class="source-value">Orsola</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">root/person/lastname</td>
+                    <td><span class="source-value">Stefa</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">root/person/city</td>
+                    <td><span class="source-value">Bogotá</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">root/person/country</td>
+                    <td><span class="source-value">Cambodia</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">root/person/firstname2</td>
+                    <td><span class="source-value">Silvana</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">root/person/lastname2</td>
+                    <td><span class="source-value">Carmena</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">root/person/email</td>
+                    <td><span class="source-value">Silvana.Carmena@yopmail.com</span></td>
+                    <td><span class="empty">(empty)</span></td>
+                </tr>
+                
+                <!-- Elements in target -->
+                <tr>
+                    <td class="node-path">body/class</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-only">class</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/date</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">1990-11-20</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/regEx</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">helloooooo world</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/enum</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">online</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/elt[1]</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">Marika</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/elt[2]</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">Nessie</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/elt[3]</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">Cristine</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/elt[4]</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">Kirbee</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/elt[5]</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">Phedra</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/Annora</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-only">Annora</span></td>
+                </tr>
+                <tr>
+                    <td class="node-path">body/Annora/age</td>
+                    <td><span class="empty">(empty)</span></td>
+                    <td><span class="target-value">34</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #666; background-color: #f8f9fa; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <p style="margin-bottom: 10px;">This is a static example showing how XML differences should be displayed with color coding.</p>
+        <p style="margin: 0;">All elements and attributes are processed, including nested ones, maintaining the hierarchical structure.</p>
+    </div>
+</body>
+</html>

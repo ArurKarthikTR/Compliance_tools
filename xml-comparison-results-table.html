@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML Comparison Results</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        .back-button {
+            background: linear-gradient(to right, #FF8200, #FFA640);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(255, 130, 0, 0.3);
+            text-decoration: none;
+            display: inline-block;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 20px 0;
+        }
+        .legend {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 4px;
+        }
+        .source-color {
+            background-color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.4);
+        }
+        .target-color {
+            background-color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.4);
+        }
+        .source-only-color {
+            background-color: #007bff;
+            border: 1px solid rgba(0, 123, 255, 0.4);
+        }
+        .target-only-color {
+            background-color: #6c757d;
+            border: 1px solid rgba(108, 117, 125, 0.4);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+        .source-value {
+            background-color: rgba(220, 53, 69, 0.15);
+            color: #dc3545;
+            padding: 6px 8px;
+            font-weight: 600;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .target-value {
+            background-color: rgba(40, 167, 69, 0.15);
+            color: #28a745;
+            padding: 6px 8px;
+            font-weight: 600;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .source-only {
+            background-color: rgba(0, 123, 255, 0.15);
+            color: #007bff;
+            padding: 6px 8px;
+            font-weight: 600;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .target-only {
+            background-color: rgba(108, 117, 125, 0.15);
+            color: #6c757d;
+            padding: 6px 8px;
+            font-weight: 600;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .empty {
+            color: #aaa;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="#" class="back-button">← Back to Upload</a>
+            <h1>Comparison Results - XML</h1>
+        </header>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color source-color"></div>
+                <span>Different in Source (Red)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color target-color"></div>
+                <span>Different in Target (Green)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color source-only-color"></div>
+                <span>Only in Source (Blue)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color target-only-color"></div>
+                <span>Only in Target (Grey)</span>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>NODE PATH</th>
+                    <th>SOURCE VALUE</th>
+                    <th>TARGET VALUE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Person element nodes -->
+                <tr>
+                    <td>person/city</td>
+                    <td><span class="source-value">Bogotá</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>person/country</td>
+                    <td><span class="source-value">Cambodia</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>person/email</td>
+                    <td><span class="source-value">Silvana.Carmena@yopmail.com</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>person/firstname</td>
+                    <td><span class="source-value">Orsola</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>person/firstname2</td>
+                    <td><span class="source-value">Silvana</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>person/lastname</td>
+                    <td><span class="source-value">Stefa</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>person/lastname2</td>
+                    <td><span class="source-value">Carmena</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>person/@city</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">Bogotá</span></td>
+                </tr>
+                <tr>
+                    <td>person/elt[1]</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">Marika</span></td>
+                </tr>
+                <tr>
+                    <td>person/elt[2]</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">Nessie</span></td>
+                </tr>
+                <tr>
+                    <td>person/elt[3]</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">Cristine</span></td>
+                </tr>
+                <tr>
+                    <td>person/elt[4]</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">Kirbee</span></td>
+                </tr>
+                <tr>
+                    <td>person/elt[5]</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">Phedra</span></td>
+                </tr>
+                
+                <!-- Other nodes -->
+                <tr>
+                    <td>random</td>
+                    <td><span class="source-value">72</span></td>
+                    <td class="empty">(empty)</td>
+                </tr>
+                <tr>
+                    <td>date</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">1984-03-15</span></td>
+                </tr>
+                <tr>
+                    <td>elt</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">Carly</span></td>
+                </tr>
+                <tr>
+                    <td>enum</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">generator</span></td>
+                </tr>
+                <tr>
+                    <td>Annora/age</td>
+                    <td class="empty">(empty)</td>
+                    <td><span class="target-value">34</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

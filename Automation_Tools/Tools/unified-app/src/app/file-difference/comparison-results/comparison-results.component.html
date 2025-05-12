@@ -1,7 +1,3 @@
-<div class="results-header">
-  <h1>File Comparison Results</h1>
-</div>
-
 <div class="back-button-container">
   <button class="back-button" (click)="goBackToUpload()">← Back to Upload</button>
 </div>
@@ -12,87 +8,148 @@
   <div class="view-controls">
     <label class="view-control-label">
       <input type="checkbox" [(ngModel)]="showOnlyDifferences" (change)="toggleDifferencesOnly()">
-      Show only differences
+      {{ fileType === 'xml' ? 'Show only changed values' : 'Show only differences' }}
     </label>
   </div>
   
-  <div class="summary-container">
-    <div class="summary-item">
-      <span class="label">Total Rows:</span>
-      <span class="value">{{ summary.totalRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Matching Rows:</span>
-      <span class="value">{{ summary.matchingRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Differing Rows:</span>
-      <span class="value">{{ summary.differingRows }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Values Changed:</span>
-      <span class="value">{{ tableData.changedValuesCount || 0 }}</span>
-    </div>
-    <div class="summary-item">
-      <span class="label">Values Removed:</span>
-      <span class="value">{{ tableData.removedValuesCount || 0 }}</span>
-    </div>
-  </div>
+  <!-- Summary section removed - using cards instead -->
   
   <!-- XML file type view -->
   <div class="table-container" *ngIf="fileType === 'xml'">
+    <!-- Color legend for XML comparison -->
+    <div class="color-legend" style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: flex; gap: 20px;">
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: 16px; height: 16px; background-color: #dc3545; margin-right: 8px; border-radius: 3px;"></span>
+        <span style="font-size: 14px;">Changed Value</span>
+      </div>
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: 16px; height: 16px; background-color: #0076CE; margin-right: 8px; border-radius: 3px;"></span>
+        <span style="font-size: 14px;">Only in Source</span>
+      </div>
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: 16px; height: 16px; background-color: #666666; margin-right: 8px; border-radius: 3px;"></span>
+        <span style="font-size: 14px;">Only in Target</span>
+      </div>
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: 16px; height: 16px; background-color: #FF8200; margin-right: 8px; border-radius: 3px;"></span>
+        <span style="font-size: 14px;">Matching Values</span>
+      </div>
+    </div>
     <table class="comparison-table">
       <thead>
         <tr>
-          <th>Node Path</th>
-          <th>Source Value</th>
-          <th>Target Value</th>
-          <th class="status-column match">Match</th>
-          <th class="status-column different">Different</th>
-          <th class="status-column source-only">Only in Source</th>
-          <th class="status-column target-only">Only in Target</th>
+          <th>NODE PATH</th>
+          <th>SOURCE VALUE</th>
+          <th>TARGET VALUE</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of processedRows">
-          <td class="path-cell">{{ row.path }}</td>
-          <td [ngClass]="{'match': row.status === 'match', 'source-only': row.status === 'source_only'}">
-            <span *ngIf="row.sourceValue !== null && row.sourceValue !== undefined"
-                  [ngClass]="{'correct-value': row.status === 'different', 'wrong-value': row.status === 'different' && row.sourceValue !== row.targetValue}">
+        <tr *ngFor="let row of processedRows; let i = index" [ngClass]="{'row-divider': i > 0}">
+          <td class="path-cell">
+            <div class="node-path">{{ cleanNodePath(row.path) }}</div>
+          </td>
+          <!-- SOURCE COLUMN - Original value in normal text, only in source blue -->
+          <td>
+            <!-- Different value in source - show in NORMAL TEXT -->
+            <span *ngIf="row.status === 'different' && row.sourceValue !== null && row.sourceValue !== undefined" 
+                  style="font-weight: normal; color: inherit;">
               {{ row.sourceValue }}
             </span>
-            <span *ngIf="row.sourceValue === null || row.sourceValue === undefined" class="empty-value">(empty)</span>
+            <!-- Source-only value (Blue) -->
+            <span *ngIf="row.status === 'source_only'" 
+                  style="color: #0076CE; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(0, 118, 206, 0.1); border: 1px solid rgba(0, 118, 206, 0.3);">
+              {{ row.sourceValue }}
+            </span>
+            <!-- Value exists in both and is the same - show in orange -->
+            <span *ngIf="row.status === 'match' && row.sourceValue !== null && row.sourceValue !== undefined" 
+                  style="color: #FF8200; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(255, 130, 0, 0.1); border: 1px solid rgba(255, 130, 0, 0.4);">
+              {{ row.sourceValue }}
+            </span>
+            <!-- Empty value -->
+            <span *ngIf="(row.sourceValue === null || row.sourceValue === undefined) && row.status !== 'target_only'" class="empty-value">(empty)</span>
+            <!-- For target-only rows, leave source column truly empty -->
+            <span *ngIf="row.status === 'target_only'"></span>
           </td>
-          <td [ngClass]="{'match': row.status === 'match', 'target-only': row.status === 'target_only'}">
-            <span *ngIf="row.targetValue !== null && row.targetValue !== undefined"
-                  [ngClass]="{'correct-value': row.status === 'different', 'wrong-value': row.status === 'different' && row.sourceValue !== row.targetValue}">
+          <!-- TARGET COLUMN - Changed value in red, only in target grey -->
+          <td>
+            <!-- Different value in target - show in RED -->
+            <span *ngIf="row.status === 'different' && row.targetValue !== null && row.targetValue !== undefined" 
+                  style="color: #dc3545; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(220, 53, 69, 0.2); border: 1px solid rgba(220, 53, 69, 0.4);">
               {{ row.targetValue }}
             </span>
-            <span *ngIf="row.targetValue === null || row.targetValue === undefined" class="empty-value">(empty)</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'match'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'match'">-</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'different'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'different'">-</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'source_only'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'source_only'">-</span>
-          </td>
-          <td class="status-cell">
-            <span class="status-indicator" *ngIf="row.status === 'target_only'">✓</span>
-            <span class="empty-indicator" *ngIf="row.status !== 'target_only'">-</span>
+            <!-- Target-only value (Grey) -->
+            <span *ngIf="row.status === 'target_only'" 
+                  style="color: #666666; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(102, 102, 102, 0.1); border: 1px solid rgba(102, 102, 102, 0.3);">
+              {{ row.targetValue }}
+            </span>
+            <!-- Value exists in both and is the same - show in orange -->
+            <span *ngIf="row.status === 'match' && row.targetValue !== null && row.targetValue !== undefined" 
+                  style="color: #FF8200; font-weight: 600; padding: 2px 6px; border-radius: 4px; background-color: rgba(255, 130, 0, 0.1); border: 1px solid rgba(255, 130, 0, 0.4);">
+              {{ row.targetValue }}
+            </span>
+            <!-- Empty value -->
+            <span *ngIf="(row.targetValue === null || row.targetValue === undefined) && row.status !== 'source_only'" class="empty-value">(empty)</span>
+            <!-- For source-only rows, leave target column truly empty -->
+            <span *ngIf="row.status === 'source_only'"></span>
           </td>
         </tr>
       </tbody>
     </table>
+    
+    <!-- Summary statistics cards for XML comparison -->
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; margin-bottom: 20px; font-size: 0.85em;">
+      <!-- Total Nodes -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">TOTAL NODES:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #0275d8;">{{ comparisonData.summary.totalRows || 0 }}</div>
+      </div>
+      
+      <!-- Matching Nodes -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">MATCHING NODES:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #28a745;">{{ comparisonData.summary.matchingRows || 0 }}</div>
+      </div>
+      
+      <!-- Differing Nodes -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">DIFFERING NODES:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #dc3545;">{{ comparisonData.summary.differingRows || 0 }}</div>
+      </div>
+      
+      <!-- Values Changed -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES CHANGED:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #FF8200;">{{ tableData.changedValuesCount || 0 }}</div>
+      </div>
+      
+      <!-- Values Only in Source -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES ONLY IN SOURCE:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #0076CE;">{{ tableData.removedValuesCount || 0 }}</div>
+      </div>
+      
+      <!-- Values Only in Target -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES ONLY IN TARGET:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #666666;">{{ tableData.targetOnlyCount || 0 }}</div>
+      </div>
+    </div>
   </div>
   
   <!-- CSV/XLSX file type view - Excel-like format -->
   <div class="table-container excel-view" *ngIf="fileType === 'csv' || fileType === 'xlsx'">
+    <!-- Color legend for Excel and CSV comparisons -->
+    <div class="color-legend" style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: flex; gap: 20px;">
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: 16px; height: 16px; background-color: #28a745; margin-right: 8px; border-radius: 3px;"></span>
+        <span style="font-size: 14px; color: #28a745;">Original Value</span>
+      </div>
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: 16px; height: 16px; background-color: #dc3545; margin-right: 8px; border-radius: 3px;"></span>
+        <span style="font-size: 14px; color: #dc3545;">Changed Value</span>
+      </div>
+    </div>
+    
     <div class="table-info" *ngIf="tableData.rows && tableData.rows.length > 0">
       <p>Showing {{ filteredRows.length }} of {{ tableData.rows.length }} rows</p>
     </div>
@@ -131,28 +188,38 @@
         </tr>
       </tbody>
     </table>
-  </div>
-  
-  <div class="legend">
-    <div class="legend-item">
-      <div class="color-box match"></div>
-      <span>Matching values</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box original-value-box"></div>
-      <span>Original Value</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box changed-value-box"></div>
-      <span>Changed Value</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box source-only"></div>
-      <span>Only in Source</span>
-    </div>
-    <div class="legend-item">
-      <div class="color-box target-only"></div>
-      <span>Only in Target</span>
+    
+    <!-- Summary statistics cards for CSV/XLSX comparison -->
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; margin-bottom: 20px; font-size: 0.85em;">
+      <!-- Total Rows -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">TOTAL ROWS:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #0275d8;">{{ tableData.rows.length || 0 }}</div>
+      </div>
+      
+      <!-- Matching Rows -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">MATCHING ROWS:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #28a745;">{{ tableData.rows.length - (comparisonData.summary?.differingRows || 0) }}</div>
+      </div>
+      
+      <!-- Differing Rows -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">DIFFERING ROWS:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #dc3545;">{{ comparisonData.summary?.differingRows || 0 }}</div>
+      </div>
+      
+      <!-- Values Changed -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES CHANGED:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #FF8200;">{{ tableData.changedValuesCount || 0 }}</div>
+      </div>
+      
+      <!-- Values Removed -->
+      <div style="flex: 1; min-width: 150px; background-color: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="color: #6c757d; font-weight: 500; margin-bottom: 5px;">VALUES REMOVED:</div>
+        <div style="font-size: 24px; font-weight: 700; color: #0076CE;">{{ tableData.removedValuesCount || 0 }}</div>
+      </div>
     </div>
   </div>
   
