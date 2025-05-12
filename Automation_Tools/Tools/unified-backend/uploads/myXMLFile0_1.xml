@@ -1,0 +1,21 @@
+<root>
+  <person
+  firstname="Nickie"
+  lastname="Saunderson"
+  city="Kano"
+  country="Greece"
+  firstname2="Barbara"
+  lastname2="Oster"
+  email="Barbara.Oster@yopmail.com"
+  />
+  <random>83</random>
+  <random_float>67.098</random_float>
+  <bool>false</bool>
+  <date>1981-05-01</date>
+  <regEx>helloooooooooooo world</regEx>
+  <enum>generator</enum>
+  <elt>Gusty</elt><elt>Carolina</elt><elt>Ingrid</elt><elt>Sallie</elt><elt>Annabela</elt>  
+  <Barbara>
+    <age>42</age>
+  </Barbara>
+</root>
