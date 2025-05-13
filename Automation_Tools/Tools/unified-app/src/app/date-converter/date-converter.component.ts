@@ -64,6 +64,16 @@ export class DateConverterComponent {
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
+          
+          // Reset form fields after successful conversion
+          this.selectedFile = null;
+          this.newDate = '';
+          
+          // Reset file input element
+          const fileInput = document.getElementById('file') as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = '';
+          }
         },
         error: (error) => {
           this.isLoading = false;

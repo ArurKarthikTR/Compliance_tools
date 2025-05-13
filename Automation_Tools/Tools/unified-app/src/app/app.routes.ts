@@ -5,6 +5,7 @@ import { DateConverterComponent } from './date-converter/date-converter.componen
 import { FileDifferenceComponent } from './file-difference/file-difference.component';
 import { TestDataGeneratorComponent } from './test-data-generator/test-data-generator.component';
 import { AboutComponent } from './about/about.component';
+import { ResourcesComponent } from './resources/resources.component';
 import { DataToolsSelectionComponent } from './data-tools-selection/data-tools-selection.component';
 import { FileFormatSelectionComponent } from './file-format-selection/file-format-selection.component';
 
@@ -20,5 +21,6 @@ export const routes: Routes = [
   { path: 'test-data-generator', component: TestDataGeneratorComponent },
   { path: 'gpt', component: GptComponent },
   { path: 'about', component: AboutComponent },
+  { path: 'resources', component: ResourcesComponent },
   { path: '**', redirectTo: '' } // Redirect to landing page for any unknown routes
 ];

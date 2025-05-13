@@ -57,7 +57,7 @@
           <i class="fas fa-external-link-alt"></i>
         </a></li>
         
-        <li><a (click)="toggleSidebar()" class="menu-item" style="cursor: pointer;">
+        <li><a (click)="navigateAndCloseSidebar('/resources')" class="menu-item" style="cursor: pointer;">
           <span>Resources</span>
           <i class="fas fa-external-link-alt"></i>
         </a></li>
@@ -102,7 +102,7 @@
         <ul>
           <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"><i class="fas fa-home"></i></a></li>
           <li><a routerLink="/about" routerLinkActive="active"><i class="fas fa-info-circle"></i></a></li>
-          <li><a href="#"><i class="fas fa-lightbulb"></i></a></li>
+          <li><a routerLink="/resources" routerLinkActive="active"><i class="fas fa-lightbulb"></i></a></li>
         </ul>
       </nav>
     </div>
@@ -112,12 +112,12 @@
     <aside class="sidebar">
       <nav class="sidebar-nav">
         <ul>
-          <!-- My Applications Header -->
-          <li class="section-header" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-            <div class="header-title" (click)="navigateOnly('/')" style="cursor: pointer;" routerLink="/">
+          <!-- TOOLS -->
+          <li routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <a routerLink="/">
               <i class="fas fa-th"></i>
               <span>TOOLS</span>
-            </div>
+            </a>
           </li>
           
           
@@ -130,8 +130,8 @@
           </li>
           
           <!-- Resources -->
-          <li>
-            <a href="#">
+          <li routerLinkActive="active">
+            <a routerLink="/resources">
               <i class="fas fa-lightbulb"></i>
               <span>RESOURCES</span>
             </a>
