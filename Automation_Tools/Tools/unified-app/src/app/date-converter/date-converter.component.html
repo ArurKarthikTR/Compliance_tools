@@ -31,10 +31,11 @@
     </div>
   </div>
 
-  <button 
+<button 
     type="submit" 
     class="btn btn-primary" 
-    [disabled]="isLoading">
+    [disabled]="isLoading"
+    (click)="onSubmit()">
     {{ isLoading ? 'Processing...' : 'Convert Dates' }}
   </button>
 
