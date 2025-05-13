@@ -298,23 +298,82 @@ export class ComparisonResultsComponent implements OnChanges {
     if (this.fileType === 'csv') {
       // Use the original column names from the CSV file
       this.columns.forEach(column => {
-        actualColumns.push(column);
-        columnMap.set(column, column);
+        // Skip unnamed columns
+        if (!column.toLowerCase().includes('unnamed:')) {
+          actualColumns.push(column);
+          columnMap.set(column, column);
+        }
       });
     } else {
       // For XLSX files, use the column names directly from the backend
       // These should already be properly extracted by the backend's Excel processing
       console.log('Using column names from backend for XLSX file:', this.columns);
       
-      // Use the column names as they are
-      this.columns.forEach(column => {
-        // Clean up column names if needed
-        const cleanColumnName = column.replace(/^Unnamed: \d+$/, '').trim();
-        const displayName = cleanColumnName || column; // Use original if cleaned is empty
+      // For Project Management files, we need to ensure the columns are in the correct order
+      // Project Name, Task Name, Assigned to, Start Date, Days Required, End Date, Progress
+      const expectedOrder = [
+        'Project Name', 'Task Name', 'Assigned to', 'Start Date', 
+        'Days Required', 'End Date', 'Progress'
+      ];
+      
+      // First, check if this is a Project Management file by looking for key columns
+      const isProjectManagement = this.columns.some(col => 
+        col.toLowerCase().includes('project') && col.toLowerCase().includes('name')
+      );
+      
+      if (isProjectManagement) {
+        console.log('Detected Project Management file, using predefined column order');
         
-        actualColumns.push(displayName);
-        columnMap.set(column, displayName);
-      });
+        // Create a map of column names to their original column names
+        const columnNameMap = new Map<string, string>();
+        this.columns.forEach(column => {
+          if (!column.toLowerCase().includes('unnamed:')) {
+            // Clean up column names if needed
+            const cleanColumnName = column.replace(/^Unnamed: \d+$/, '').trim();
+            const displayName = cleanColumnName || column; // Use original if cleaned is empty
+            columnNameMap.set(displayName.toLowerCase(), column);
+          }
+        });
+        
+        // Add columns in the expected order if they exist
+        expectedOrder.forEach(expectedCol => {
+          // Try to find a matching column (case insensitive)
+          const matchingCol = Array.from(columnNameMap.keys()).find(col => 
+            col.toLowerCase() === expectedCol.toLowerCase()
+          );
+          
+          if (matchingCol) {
+            const originalCol = columnNameMap.get(matchingCol);
+            if (originalCol) {
+              actualColumns.push(expectedCol);
+              columnMap.set(originalCol, expectedCol);
+              // Remove from map to avoid duplicates
+              columnNameMap.delete(matchingCol);
+            }
+          }
+        });
+        
+        // Add any remaining columns that weren't in the expected order
+        Array.from(columnNameMap.entries()).forEach(([displayName, originalCol]) => {
+          if (!displayName.toLowerCase().includes('unnamed:')) {
+            actualColumns.push(displayName);
+            columnMap.set(originalCol, displayName);
+          }
+        });
+      } else {
+        // For other XLSX files, use the column names as they are, but filter out unnamed columns
+        this.columns.forEach(column => {
+          // Skip unnamed columns
+          if (!column.toLowerCase().includes('unnamed:')) {
+            // Clean up column names if needed
+            const cleanColumnName = column.replace(/^Unnamed: \d+$/, '').trim();
+            const displayName = cleanColumnName || column; // Use original if cleaned is empty
+            
+            actualColumns.push(displayName);
+            columnMap.set(column, displayName);
+          }
+        });
+      }
       
       // Log the column mapping for debugging
       console.log('Column mapping:', Object.fromEntries(columnMap));
