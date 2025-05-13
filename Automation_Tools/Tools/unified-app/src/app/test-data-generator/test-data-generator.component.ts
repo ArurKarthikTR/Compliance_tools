@@ -28,7 +28,6 @@ export class TestDataGeneratorComponent implements OnInit {
     { value: 'String', label: 'String', hasOptions: true, optionsConfig: { minLength: 5, maxLength: 20 } },
     { value: 'Number', label: 'Number', hasOptions: true, optionsConfig: { min: 0, max: 100, length: 5 } },
     { value: 'Boolean', label: 'Boolean', hasOptions: false },
-    { value: 'Date', label: 'Date', hasOptions: true, optionsConfig: { startDate: '2020-01-01', endDate: '2025-12-31' } },
     { value: 'Float', label: 'Float', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
     { value: 'Decimal', label: 'Decimal', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } }
   ];
