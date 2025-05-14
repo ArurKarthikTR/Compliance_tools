@@ -144,8 +144,8 @@
         }
         
         &.source-only-box {
-          background-color: #0076CE;
-          box-shadow: 0 1px 3px rgba(0, 118, 206, 0.3);
+          background-color: #28a745; /* Changed to green for original values */
+          box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
         }
         
         &.target-only-box {
@@ -433,8 +433,8 @@
     }
     
     .source-only-value {
-      background-color: rgba(0, 118, 206, 0.2);
-      color: #0076CE;
+      background-color: rgba(40, 167, 69, 0.2);
+      color: #28a745; /* Green for original values */
       font-weight: 600;
       padding: 6px 10px;
       border-radius: 4px;
@@ -447,10 +447,39 @@
         left: 0;
         width: 100%;
         height: 100%;
-        border: 2px solid rgba(0, 118, 206, 0.5);
+        border: 2px solid rgba(40, 167, 69, 0.5);
         border-radius: 4px;
         box-sizing: border-box;
         pointer-events: none;
+      }
+    }
+    
+    .source-value {
+      background-color: rgba(40, 167, 69, 0.2);
+      color: #28a745; /* Green for original values */
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 4px;
+      margin-bottom: 5px;
+    }
+    
+    .target-value {
+      background-color: rgba(220, 53, 69, 0.2);
+      color: #dc3545; /* Red for changed values */
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 4px;
+    }
+    
+    .days-required-changed {
+      .source-value {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+      }
+      
+      .target-value {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
       }
     }
     
@@ -559,6 +588,20 @@
       font-weight: 600;
     }
     
+    .changed-value-container {
+      margin-top: 5px;
+      padding: 3px;
+      border-left: 3px solid #dc3545;
+      background-color: rgba(220, 53, 69, 0.05);
+    }
+    
+    .changed-value-label {
+      font-size: 11px;
+      color: #6c757d;
+      font-style: italic;
+      margin-right: 5px;
+    }
+    
     .source-diff-value {
       color: inherit; /* No color for source values */
       font-weight: normal;
@@ -600,13 +643,13 @@
     }
     
     .match-value {
-      color: #FF8200; /* Changed back to orange */
-      font-weight: 600;
+      color: inherit; /* Changed from orange to inherit */
+      font-weight: normal;
       padding: 2px 6px;
       border-radius: 4px;
       display: inline-block;
-      background-color: rgba(255, 130, 0, 0.1); /* Light orange background */
-      border: 1px solid rgba(255, 130, 0, 0.4); /* Orange border */
+      background-color: transparent; /* Removed orange background */
+      border: none; /* Removed orange border */
     }
     
     .diff-cell {
@@ -668,8 +711,8 @@
     }
     
     .source-only-value {
-      background-color: rgba(0, 118, 206, 0.2);
-      color: #0076CE;
+      background-color: rgba(40, 167, 69, 0.2);
+      color: #28a745; /* Changed to green for original values */
       padding: 2px 6px;
       border-radius: 4px;
       font-weight: 600;

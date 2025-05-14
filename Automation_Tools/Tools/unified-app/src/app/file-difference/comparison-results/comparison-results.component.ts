@@ -21,10 +21,10 @@ interface TableData {
   headers: string[];
   rows: any[][];
   diffMap: Map<string, string>; // key: "row-col", value: status
-  diffValueMap?: Map<string, {original: any, changed: any}>; // key: "row-col", values: original and changed
-  changedValuesCount?: number;
-  removedValuesCount?: number;
-  targetOnlyCount?: number;
+  diffValueMap: Map<string, {source: any, target: any}>; // key: "row-col", values: source and target
+  changedValuesCount?: number; // Count of changed values
+  removedValuesCount?: number; // Count of values only in source
+  targetOnlyCount?: number; // Count of values only in target
 }
 
 @Component({
@@ -38,12 +38,20 @@ export class ComparisonResultsComponent implements OnChanges {
   @Input() comparisonData: any = null;
   @Output() resetView = new EventEmitter<void>();
   
-  columns: string[] = [];
-  rows: any[] = [];
+  // XML comparison properties
   processedRows: ProcessedRow[] = [];
-  cellDifferences: CellDifference[] = [];
-  tableData: TableData = { headers: [], rows: [], diffMap: new Map<string, string>() };
+  private allXmlRows: ProcessedRow[] = [];
+  
+  // CSV/XLSX comparison properties
+  tableData: TableData = { 
+    headers: [], 
+    rows: [], 
+    diffMap: new Map<string, string>(),
+    diffValueMap: new Map<string, {source: any, target: any}>()
+  };
   filteredRows: any[][] = [];
+  
+  // Common properties
   summary: any = {};
   fileType: string = '';
   showOnlyDifferences: boolean = false;
@@ -61,284 +69,48 @@ export class ComparisonResultsComponent implements OnChanges {
       return;
     }
     
-    console.log('Processing comparison data...');
-    
-    this.columns = this.comparisonData.columns || [];
-    this.rows = this.comparisonData.rows || [];
-    this.summary = this.comparisonData.summary || {};
     this.fileType = this.comparisonData.fileType || '';
+    this.summary = this.comparisonData.summary || {};
     
     console.log('Processing comparison data for file type:', this.fileType);
-    console.log('Columns:', this.columns);
-    console.log('Rows count:', this.rows.length);
-    console.log('Summary:', this.summary);
-    
-    // For XML comparison, we need to calculate all count values correctly
-    if (this.fileType === 'xml') {
-      console.log('Calculating counts for XML comparison');
-      
-      // Reset counts to calculate fresh values
-      let totalNodesCount = 0;
-      let matchingNodesCount = 0;
-      let differingNodesCount = 0;
-      let changedValuesCount = 0;
-      let removedValuesCount = 0;
-      let targetOnlyCount = 0;
-      
-      // Process each row (each row represents a node in XML)
-      this.rows.forEach(row => {
-        // For XML, each row.cells object contains paths and their comparison info
-        Object.entries(row.cells || {}).forEach(([path, cell]: [string, any]) => {
-          if (cell) {
-            totalNodesCount++;
-            
-            if (cell.status === 'match') {
-              matchingNodesCount++;
-            } else if (cell.status === 'different') {
-              changedValuesCount++;
-              differingNodesCount++;
-            } else if (cell.status === 'source_only') {
-              removedValuesCount++;
-              differingNodesCount++;
-            } else if (cell.status === 'target_only') {
-              targetOnlyCount++;
-              differingNodesCount++;
-            }
-          }
-        });
-      });
-      
-      // Update counts with calculated values
-      this.summary.totalRows = totalNodesCount;
-      this.summary.matchingRows = matchingNodesCount;
-      this.summary.differingRows = differingNodesCount;
-      
-      // Update the tableData with calculated counts
-      this.tableData.changedValuesCount = changedValuesCount;
-      this.tableData.removedValuesCount = removedValuesCount;
-      this.tableData.targetOnlyCount = targetOnlyCount;
-      
-      console.log(`XML counts - Total: ${totalNodesCount}, Matching: ${matchingNodesCount}, Differing: ${differingNodesCount}, Changed: ${changedValuesCount}, Removed: ${removedValuesCount}, Target Only: ${targetOnlyCount}`);
-    }
     
     // Process data based on file type
     if (this.fileType === 'xml') {
-      console.log('Processing XML data');
-      this.processedRows = this.transformXmlForDisplay();
-      console.log('Processed XML rows:', this.processedRows.length);
+      this.processXmlData();
     } else {
       // For CSV and XLSX
-      console.log('Processing CSV/XLSX data');
-      this.cellDifferences = this.extractCellDifferences();
-      console.log('Cell differences:', this.cellDifferences.length);
-      this.tableData = this.transformToTableFormat();
-      console.log('Table data rows:', this.tableData.rows.length);
-      
-      // Initialize filtered rows
-      this.filteredRows = [...this.tableData.rows];
+      this.processCsvXlsxData();
     }
   }
   
-  // Store original XML rows for toggling
-  private allXmlRows: ProcessedRow[] = [];
-  
-  toggleDifferencesOnly(): void {
-    // For XML files, filter to show only differences
-    if (this.fileType === 'xml') {
-      if (this.allXmlRows.length === 0) {
-        // Store original rows first time
-        this.allXmlRows = [...this.processedRows];
-      }
-      
-      if (this.showOnlyDifferences) {
-        // Show only rows with changed values (different status)
-        this.processedRows = this.allXmlRows.filter(row => 
-          row.status === 'different'
-        );
-      } else {
-        // Show all rows
-        this.processedRows = [...this.allXmlRows];
-      }
-      
-      console.log(`Filtered XML rows to ${this.processedRows.length} rows (showing only changes: ${this.showOnlyDifferences})`);
-      return;
-    }
+  // XML data processing - kept as is
+  processXmlData(): void {
+    console.log('Processing XML data');
     
-    // For CSV/XLSX files, apply filtering
-    if (this.showOnlyDifferences) {
-      // Filter to show only rows with differences
-      this.filteredRows = this.tableData.rows.filter((row, rowIndex) => {
-        // Check if any cell in this row has a difference
-        for (let colIndex = 1; colIndex < this.tableData.headers.length; colIndex++) {
-          const column = this.tableData.headers[colIndex];
-          const key = `${rowIndex}-${column}`;
-          const status = this.tableData.diffMap.get(key);
-          
-          if (status === 'different' || status === 'source_only' || status === 'target_only') {
-            return true;
-          }
-        }
-        return false;
-      });
-    } else {
-      // Show all rows
-      this.filteredRows = [...this.tableData.rows];
-    }
-    
-    console.log(`Filtered to ${this.filteredRows.length} rows (showing only differences: ${this.showOnlyDifferences})`);
-  }
-  
-  transformToTableFormat(): TableData {
-    // Extract actual column names from the data
-    const actualColumns: string[] = [];
-    const columnMap = new Map<string, string>();
-    
-    // First, find the header row (usually row 2 or 3)
-    let headerRowIndex = -1;
-    
-    for (let i = 0; i < this.rows.length; i++) {
-      const row = this.rows[i];
-      let potentialHeaderCount = 0;
-      
-      // Check if this row has values that look like headers
-      this.columns.forEach(column => {
-        const cell = row.cells[column];
-        if (cell && cell.sourceValue && typeof cell.sourceValue === 'string' && 
-            !cell.sourceValue.includes('(empty)') && 
-            cell.sourceValue !== 'Project Management Data') {
-          potentialHeaderCount++;
-        }
-      });
-      
-      // If we found multiple potential headers, this is likely our header row
-      if (potentialHeaderCount > 2) {
-        headerRowIndex = i;
-        break;
-      }
-    }
-    
-    // If we found a header row, use it to map column names
-    if (headerRowIndex >= 0) {
-      const headerRow = this.rows[headerRowIndex];
-      
-      this.columns.forEach(column => {
-        const cell = headerRow.cells[column];
-        if (cell && cell.sourceValue) {
-          columnMap.set(column, String(cell.sourceValue));
-          actualColumns.push(String(cell.sourceValue));
-        }
-      });
-    } else {
-      // Fallback: just use the original column names
-      this.columns.forEach(column => {
-        actualColumns.push(column);
-        columnMap.set(column, column);
-      });
-    }
-    
-    const result: TableData = {
-      headers: ['Row', ...actualColumns],
-      rows: [],
-      diffMap: new Map<string, string>()
-    };
-    
-    if (!this.rows || !this.columns) {
-      console.warn('No rows or columns data available');
-      return result;
-    }
-    
-    // Skip the header row when processing data
-    const dataStartIndex = headerRowIndex >= 0 ? headerRowIndex + 1 : 0;
-    
-    // Group differences by row
-    const rowMap = new Map<number, Map<string, any>>();
-    const diffStatusMap = new Map<string, string>();
-    const diffValueMap = new Map<string, {original: any, changed: any}>();
-    
-    // Count changes and removals
+    // Reset counts to calculate fresh values
+    let totalNodesCount = 0;
+    let matchingNodesCount = 0;
+    let differingNodesCount = 0;
     let changedValuesCount = 0;
     let removedValuesCount = 0;
-    
-    for (let i = dataStartIndex; i < this.rows.length; i++) {
-      const row = this.rows[i];
-      const rowIndex = i - dataStartIndex;
-      
-      if (!rowMap.has(rowIndex)) {
-        rowMap.set(rowIndex, new Map<string, any>());
-      }
-      
-      const rowData = rowMap.get(rowIndex)!;
-      
-      this.columns.forEach((column, colIndex) => {
-        const cell = row.cells[column];
-        const mappedColumn = columnMap.get(column) || column;
-        
-        if (cell) {
-          // For display, use the source value by default
-          rowData.set(mappedColumn, cell.sourceValue);
-          
-          // Store the status for highlighting
-          const key = `${rowIndex}-${mappedColumn}`;
-          diffStatusMap.set(key, cell.status);
-          
-          // If values are different, store both values
-          if (cell.status === 'different') {
-            diffValueMap.set(key, {
-              original: cell.sourceValue,
-              changed: cell.targetValue
-            });
-            changedValuesCount++;
-          } else if (cell.status === 'source_only') {
-            removedValuesCount++;
-          }
-        }
-      });
-    }
-    
-    // Convert to array format for template
-    Array.from(rowMap.entries()).sort((a, b) => a[0] - b[0]).forEach(([rowIndex, rowData]) => {
-      const rowArray = [rowIndex + 1]; // Add row number (1-based)
-      
-      actualColumns.forEach(column => {
-        rowArray.push(rowData.get(column));
-      });
-      
-      result.rows.push(rowArray);
-    });
-    
-    result.diffMap = diffStatusMap;
-    result.diffValueMap = diffValueMap;
-    result.changedValuesCount = changedValuesCount;
-    result.removedValuesCount = removedValuesCount;
-    
-    return result;
-  }
-  
-  transformXmlForDisplay(): ProcessedRow[] {
-    const result: ProcessedRow[] = [];
-    
-    if (!this.rows || !this.columns) {
-      console.warn('No XML data to transform');
-      return result;
-    }
-    
-    console.log('Processing XML comparison data with rows:', this.rows.length);
+    let targetOnlyCount = 0;
     
     // Create a map to store unique paths and their values
     const pathMap = new Map<string, ProcessedRow>();
     // Store original order of paths as they appear in source
     const pathOrder: string[] = [];
     
-    // First pass: collect all unique paths and their values from all rows
-    this.rows.forEach(row => {
-      // For XML, each row.cells object contains a single path key
-      // which contains the comparison info for that XML node
-      Object.entries(row.cells || {}).forEach(([column, cell]: [string, any]) => {
+    // Process each row (each row represents a node in XML)
+    this.comparisonData.rows.forEach((row: any) => {
+      // For XML, each row.cells object contains paths and their comparison info
+      Object.entries(row.cells || {}).forEach(([path, cell]: [string, any]) => {
         if (cell) {
           // If path not already tracked in order, add it
-          if (!pathOrder.includes(column)) {
-            pathOrder.push(column);
+          if (!pathOrder.includes(path)) {
+            pathOrder.push(path);
           }
+          
+          totalNodesCount++;
           
           // Use the status directly from the backend if available
           let status = cell.status;
@@ -357,9 +129,23 @@ export class ComparisonResultsComponent implements OnChanges {
             }
           }
           
+          // Count based on status
+          if (status === 'match') {
+            matchingNodesCount++;
+          } else if (status === 'different') {
+            changedValuesCount++;
+            differingNodesCount++;
+          } else if (status === 'source_only') {
+            removedValuesCount++;
+            differingNodesCount++;
+          } else if (status === 'target_only') {
+            targetOnlyCount++;
+            differingNodesCount++;
+          }
+          
           // Always update the path map with latest values
-          pathMap.set(column, {
-            path: column,
+          pathMap.set(path, {
+            path: path,
             sourceValue: cell.sourceValue !== undefined ? cell.sourceValue : null,
             targetValue: cell.targetValue !== undefined ? cell.targetValue : null,
             status: status
@@ -368,154 +154,241 @@ export class ComparisonResultsComponent implements OnChanges {
       });
     });
     
-    console.log(`Found ${pathOrder.length} unique XML paths`);
+    // Update counts with calculated values
+    this.summary.totalRows = totalNodesCount;
+    this.summary.matchingRows = matchingNodesCount;
+    this.summary.differingRows = differingNodesCount;
     
-    // Use the original path order from source file instead of sorting alphabetically
+    // Additional summary data for XML
+    this.summary.changedValuesCount = changedValuesCount;
+    this.summary.removedValuesCount = removedValuesCount;
+    this.summary.targetOnlyCount = targetOnlyCount;
+    
+    console.log(`XML counts - Total: ${totalNodesCount}, Matching: ${matchingNodesCount}, Differing: ${differingNodesCount}`);
+    
+    // Use the original path order from source file
+    this.processedRows = [];
     pathOrder.forEach(path => {
       const row = pathMap.get(path);
-      // Show all nodes in XML comparison, even matching ones
       if (row) {
-        result.push(row);
+        this.processedRows.push(row);
       }
     });
     
-    console.log(`Transformed XML data has ${result.length} rows`);
-    return result;
+    // Store original rows for filtering
+    this.allXmlRows = [...this.processedRows];
+    
+    console.log(`Transformed XML data has ${this.processedRows.length} rows`);
   }
   
-  extractCellDifferences(): CellDifference[] {
-    const differences: CellDifference[] = [];
+  // Implementation for CSV/XLSX data processing
+  processCsvXlsxData(): void {
+    console.log('Processing CSV/XLSX data');
     
-    if (!this.rows || !this.columns) {
-      console.warn('No data to extract cell differences from');
-      return differences;
+    if (!this.comparisonData.sourceData) {
+      console.warn('Missing source data for comparison');
+      return;
     }
     
-    // For each row in the comparison data
-    this.rows.forEach((row, rowIndex) => {
-      // For each column in the row
-      this.columns.forEach(column => {
-        const cell = row.cells[column];
-        if (cell) {
-          // Include all cells for CSV/XLSX to show a complete view
-          // For a cleaner view, you could filter to only show differences:
-          // if (cell.status !== 'match') {
-          differences.push({
-            column: column,
-            rowIndex: rowIndex,
-            sourceValue: cell.sourceValue,
-            targetValue: cell.targetValue,
-            status: cell.status
-          });
-          // }
-        }
-      });
+    // Extract headers from source data
+    const headers = this.comparisonData.headers || [];
+    
+    // Initialize table data
+    this.tableData = {
+      headers: ['Row', ...headers],
+      rows: [],
+      diffMap: new Map<string, string>(),
+      diffValueMap: new Map<string, {source: any, target: any}>()
+    };
+    
+    // Use summary data from backend
+    if (this.comparisonData.summary) {
+      this.summary = this.comparisonData.summary;
+    } else {
+      // Fallback to empty summary
+      this.summary = {
+        totalRows: 0,
+        matchingRows: 0,
+        differingRows: 0
+      };
+    }
+    
+    // Process source rows
+    const sourceRows = this.comparisonData.sourceData || [];
+    
+    // Process each source row
+    sourceRows.forEach((sourceRow: any, index: number) => {
+      if (!sourceRow) return;
+      
+      const tableRow = [index + 1]; // Row number (1-based)
+      
+      // Process each column in the row
+      for (const header of headers) {
+        const sourceValue = sourceRow[header];
+        
+        // Add source value to row for display
+        tableRow.push(sourceValue !== undefined && sourceValue !== null ? sourceValue : 0);
+      }
+      
+      // Add row to table data
+      this.tableData.rows.push(tableRow);
     });
     
-    // Sort by column and row for better readability
-    return differences.sort((a, b) => {
-      if (a.column === b.column) {
-        return a.rowIndex - b.rowIndex;
-      }
-      return a.column.localeCompare(b.column);
-    });
+    // Process differences from backend
+    if (this.comparisonData.differences && Array.isArray(this.comparisonData.differences)) {
+      this.comparisonData.differences.forEach((diff: any) => {
+        if (!diff || typeof diff.rowIndex !== 'number' || !diff.column) return;
+        
+        const rowIndex = diff.rowIndex;
+        const column = diff.column;
+        const sourceValue = diff.sourceValue;
+        const targetValue = diff.targetValue;
+        
+        // Create a key for the difference map
+        const key = `${rowIndex}-${column}`;
+        
+        // Determine the status
+        let status = 'different';
+        if (sourceValue === null || sourceValue === undefined) {
+          status = 'target_only';
+        } else if (targetValue === null || targetValue === undefined) {
+          status = 'source_only';
+        }
+        
+        // Store the difference
+        this.tableData.diffMap.set(key, status);
+        this.tableData.diffValueMap.set(key, {
+          source: sourceValue,
+          target: targetValue
+        });
+      });
+    }
+    
+    // Initialize filtered rows with all rows
+    this.filteredRows = [...this.tableData.rows];
+    
+    console.log(`CSV/XLSX data processed: ${this.tableData.rows.length} total rows`);
   }
   
+  // Toggle showing only differences
+  toggleDifferencesOnly(): void {
+    // For XML files, filter to show only differences
+    if (this.fileType === 'xml') {
+      if (this.showOnlyDifferences) {
+        // Show only rows with changed values (different status)
+        this.processedRows = this.allXmlRows.filter(row => 
+          row.status === 'different' || row.status === 'source_only' || row.status === 'target_only'
+        );
+      } else {
+        // Show all rows
+        this.processedRows = [...this.allXmlRows];
+      }
+      
+      console.log(`Filtered XML rows to ${this.processedRows.length} rows (showing only changes: ${this.showOnlyDifferences})`);
+      return;
+    }
+    
+    // For CSV/XLSX files, apply filtering
+    if (this.showOnlyDifferences) {
+      // Create a set to track rows with differences
+      const rowsWithDifferences = new Set<number>();
+      
+      // Identify rows with differences
+      for (let rowIndex = 0; rowIndex < this.tableData.rows.length; rowIndex++) {
+        for (let colIndex = 1; colIndex < this.tableData.headers.length; colIndex++) {
+          const column = this.tableData.headers[colIndex];
+          const key = `${rowIndex}-${column}`;
+          
+          if (this.tableData.diffMap.has(key)) {
+            rowsWithDifferences.add(rowIndex);
+            break;
+          }
+        }
+      }
+      
+      // Filter to only show rows with differences
+      this.filteredRows = this.tableData.rows.filter((_, rowIndex) => 
+        rowsWithDifferences.has(rowIndex)
+      );
+      
+      console.log(`Filtered to ${this.filteredRows.length} rows with differences`);
+    } else {
+      // Show all rows
+      this.filteredRows = [...this.tableData.rows];
+      console.log(`Showing all ${this.filteredRows.length} rows`);
+    }
+  }
+  
+  // Get CSS class for cell styling
+  getCellClass(rowIndex: number | string, column: string): string {
+    if (!column) return '';
+    
+    // Ensure rowIndex is a number for key generation
+    const numericRowIndex = typeof rowIndex === 'string' ? parseInt(rowIndex, 10) : rowIndex;
+    
+    const key = `${numericRowIndex}-${column}`;
+    const status = this.tableData.diffMap.get(key);
+    
+    if (!status) return '';
+    
+    // For CSV/XLSX files
+    if (this.fileType === 'csv' || this.fileType === 'xlsx') {
+      if (status === 'different') {
+        const diffValues = this.tableData.diffValueMap.get(key);
+        if (diffValues) {
+          // Check if this is a "Days Required" column or any other column
+          if (column === 'Days Required' || column === 'DAYS REQUIRED') {
+            return 'days-required-changed';
+          }
+          return 'source-value'; // Green for original values
+        }
+      } else if (status === 'source_only') {
+        return 'source-only-value';
+      } else if (status === 'target_only') {
+        return 'target-only-value';
+      }
+    } else if (this.fileType === 'xml') {
+      // For XML files
+      switch (status) {
+        case 'match': return 'match-value';
+        case 'different': return 'different-value';
+        case 'source_only': return 'source-only-value';
+        case 'target_only': return 'target-only-value';
+      }
+    }
+    
+    return '';
+  }
+  
+  // Get target value for a cell (used to show changed value)
+  getTargetValue(rowIndex: number | string, column: string): any {
+    const numericRowIndex = typeof rowIndex === 'string' ? parseInt(rowIndex, 10) : rowIndex;
+    const key = `${numericRowIndex}-${column}`;
+    const diffValues = this.tableData.diffValueMap.get(key);
+    return diffValues ? diffValues.target : null;
+  }
+  
+  // Check if a cell has a difference
+  hasDifference(rowIndex: number | string, column: string): boolean {
+    const numericRowIndex = typeof rowIndex === 'string' ? parseInt(rowIndex, 10) : rowIndex;
+    const key = `${numericRowIndex}-${column}`;
+    return this.tableData.diffMap.has(key) && this.tableData.diffMap.get(key) === 'different';
+  }
+  
+  // Clean node path for XML display
+  cleanNodePath(path: string): string {
+    if (!path) return path;
+    return path.replace(/\{[^}]*\}/g, '');
+  }
+  
+  // Go back to upload view
   goBackToUpload(): void {
     this.resetView.emit();
   }
   
-  getCellClass(rowIndex: number, column: string): string {
-    if (!column) return '';
-    
-    const key = `${rowIndex}-${column}`;
-    const status = this.tableData.diffMap?.get(key);
-    
-    if (!status) return '';
-    
-    let classNames = '';
-    
-    // Add status-based class
-    switch (status) {
-      case 'match':
-        // For CSV/XLSX files, don't apply the orange match-value styling
-        // Only apply match-value class for XML files
-        if (this.fileType === 'xml') {
-          classNames = 'match-value';
-        }
-        break;
-      case 'different':
-        // Check if we have both source and target values
-        const sourceKey = `${rowIndex}-${column}-source`;
-        const targetKey = `${rowIndex}-${column}-target`;
-        if (this.tableData.diffMap?.has(sourceKey) && this.tableData.diffMap?.has(targetKey)) {
-          classNames = 'different-value';
-        } else {
-          classNames = 'correct-value';
-        }
-        break;
-      case 'source_only':
-        classNames = 'source-only-value';
-        break;
-      case 'target_only':
-        classNames = 'target-only-value';
-        break;
-    }
-    
-    // Add content-type class
-    const contentClass = this.getCellContentClass(rowIndex, column);
-    if (contentClass) {
-      classNames += ' ' + contentClass;
-    }
-    
-    return classNames;
-  }
-  
-  // This function no longer removes array indices
-  cleanNodePath(path: string): string {
-    if (!path) return path;
-    return path; // Return path unchanged to preserve array indices
-  }
-  
-  getCellContentClass(rowIndex: number, column: string): string {
-    // Get the cell value
-    const row = this.filteredRows[rowIndex];
-    if (!row) return '';
-    
-    const colIndex = this.tableData.headers.indexOf(column);
-    if (colIndex < 0) return '';
-    
-    const value = row[colIndex];
-    
-    // Check if it's a numeric value
-    if (value === null || value === undefined) return '';
-    
-    const strValue = String(value).trim();
-    
-    // Check if it's a number (including decimal points)
-    if (/^-?\d+(\.\d+)?$/.test(strValue)) {
-      return 'numeric-content';
-    }
-    
-    // Check if it's a date format
-    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(strValue) || 
-        /^\d{2,4}[-/]\d{1,2}[-/]\d{1,2}$/.test(strValue)) {
-      return 'numeric-content';
-    }
-    
-    // For longer text content
-    if (strValue.length > 10 || strValue.includes(' ')) {
-      return 'text-content';
-    }
-    
-    // Default to numeric for short values without spaces
-    return 'numeric-content';
-  }
-  
+  // Download results as JSON
   downloadResults(): void {
-    if (!this.comparisonData) {
-      return;
-    }
+    if (!this.comparisonData) return;
     
     const jsonString = JSON.stringify(this.comparisonData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });

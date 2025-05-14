@@ -109,16 +109,19 @@ export class FileUploadComponent implements OnInit, OnChanges {
       this.sourceFileSize = this.formatFileSize(file.size);
       this.validateFiles();
       
-      // If it's an Excel file, load preview
-      if (this.getFileExtension(file.name) === '.xlsx') {
+      // Load preview for Excel and CSV files
+      const fileExt = this.getFileExtension(file.name);
+      if (fileExt === '.xlsx' || fileExt === '.csv') {
         this.loadFilePreview(file, 'source');
-      } else if (this.getFileExtension(file.name) === '.xml') {
+      } else if (fileExt === '.xml') {
         this.readXmlFile(file, 'source');
       } else {
         this.sourceFilePreviewData = null;
         this.sourceFileContent = null;
-        // Don't emit file info for non-XML files
       }
+      
+      // Emit file info for all file types
+      this.emitFileInfo();
     }
   }
   
@@ -132,16 +135,19 @@ export class FileUploadComponent implements OnInit, OnChanges {
       this.targetFileSize = this.formatFileSize(file.size);
       this.validateFiles();
       
-      // If it's an Excel file, load preview
-      if (this.getFileExtension(file.name) === '.xlsx') {
+      // Load preview for Excel and CSV files
+      const fileExt = this.getFileExtension(file.name);
+      if (fileExt === '.xlsx' || fileExt === '.csv') {
         this.loadFilePreview(file, 'target');
-      } else if (this.getFileExtension(file.name) === '.xml') {
+      } else if (fileExt === '.xml') {
         this.readXmlFile(file, 'target');
       } else {
         this.targetFilePreviewData = null;
         this.targetFileContent = null;
-        // Don't emit file info for non-XML files
       }
+      
+      // Emit file info for all file types
+      this.emitFileInfo();
     }
   }
   
@@ -149,20 +155,51 @@ export class FileUploadComponent implements OnInit, OnChanges {
     const formData = new FormData();
     formData.append('file', file);
     
+    console.log(`Loading preview for ${fileType} file: ${file.name}`);
+    
+    // Show loading indicator or placeholder while waiting for preview
+    if (fileType === 'source') {
+      this.sourceFilePreviewData = { loading: true, columns: ['Loading...'], rows: [] };
+    } else {
+      this.targetFilePreviewData = { loading: true, columns: ['Loading...'], rows: [] };
+    }
+    
     this.http.post('http://localhost:5000/api/file-difference/preview', formData)
       .subscribe({
         next: (result: any) => {
+          console.log(`Preview data received for ${fileType} file:`, result);
+          
           if (fileType === 'source') {
             this.sourceFilePreviewData = result;
+            console.log('Source file preview data set:', this.sourceFilePreviewData);
           } else {
             this.targetFilePreviewData = result;
+            console.log('Target file preview data set:', this.targetFilePreviewData);
           }
-          // Emit file information when Excel preview is loaded
+          
+          // Emit file information when preview is loaded
           this.emitFileInfo();
         },
         error: (error) => {
           console.error(`Error loading ${fileType} file preview:`, error);
-          // Don't show error to user, just log it
+          
+          // Set a basic preview data structure even if preview fails
+          if (fileType === 'source') {
+            this.sourceFilePreviewData = { 
+              error: true, 
+              columns: ['Preview not available'], 
+              rows: [{ 'Preview not available': 'Could not load preview data' }] 
+            };
+          } else {
+            this.targetFilePreviewData = { 
+              error: true, 
+              columns: ['Preview not available'], 
+              rows: [{ 'Preview not available': 'Could not load preview data' }] 
+            };
+          }
+          
+          // Still emit file info to ensure files are tracked
+          this.emitFileInfo();
         }
       });
   }

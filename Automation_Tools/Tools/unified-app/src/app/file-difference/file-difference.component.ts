@@ -93,6 +93,13 @@ export class FileDifferenceComponent {
     console.log('FileDifferenceComponent resetting view');
     this.comparisonData = null;
     this.errorMessage = '';
-    // File information is preserved for the file-upload component
+    // File information is explicitly preserved for the file-upload component
+    console.log('Preserving file information for upload view:');
+    console.log('Source file:', this.sourceFile?.name);
+    console.log('Target file:', this.targetFile?.name);
+    console.log('Source preview data exists:', !!this.sourceFilePreviewData);
+    console.log('Target preview data exists:', !!this.targetFilePreviewData);
+    console.log('Source XML content exists:', !!this.sourceFileContent);
+    console.log('Target XML content exists:', !!this.targetFileContent);
   }
 }
