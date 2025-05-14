@@ -83,7 +83,7 @@ export class ComparisonResultsComponent implements OnChanges {
     }
   }
   
-  // XML data processing - kept as is
+  // XML data processing
   processXmlData(): void {
     console.log('Processing XML data');
     
@@ -198,7 +198,10 @@ export class ComparisonResultsComponent implements OnChanges {
       headers: ['Row', ...headers],
       rows: [],
       diffMap: new Map<string, string>(),
-      diffValueMap: new Map<string, {source: any, target: any}>()
+      diffValueMap: new Map<string, {source: any, target: any}>(),
+      changedValuesCount: 0,
+      removedValuesCount: 0,
+      targetOnlyCount: 0
     };
     
     // Use summary data from backend
@@ -251,8 +254,12 @@ export class ComparisonResultsComponent implements OnChanges {
         let status = 'different';
         if (sourceValue === null || sourceValue === undefined) {
           status = 'target_only';
+          this.tableData.targetOnlyCount = (this.tableData.targetOnlyCount || 0) + 1;
         } else if (targetValue === null || targetValue === undefined) {
           status = 'source_only';
+          this.tableData.removedValuesCount = (this.tableData.removedValuesCount || 0) + 1;
+        } else {
+          this.tableData.changedValuesCount = (this.tableData.changedValuesCount || 0) + 1;
         }
         
         // Store the difference

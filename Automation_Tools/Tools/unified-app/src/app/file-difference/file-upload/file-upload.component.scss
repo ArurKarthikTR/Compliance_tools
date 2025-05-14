@@ -253,34 +253,34 @@
     }
   }
   
-.no-preview-message {
-  padding: 20px;
-  text-align: center;
-  color: #666;
-  font-style: italic;
-}
-
-.preview-error {
-  padding: 20px;
-  text-align: center;
-  background-color: #f8f9fa;
-  border-radius: 4px;
+  .no-preview-message {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+  }
   
-  p {
-    margin: 0;
+  .preview-error {
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 4px;
     
-    &:first-child {
-      font-weight: bold;
-      color: #dc3545;
-      margin-bottom: 5px;
+    p {
+      margin: 0;
+      
+      &:first-child {
+        font-weight: bold;
+        color: #dc3545;
+        margin-bottom: 5px;
+      }
+    }
+    
+    .error-details {
+      color: #666;
+      font-size: 0.9em;
     }
   }
-  
-  .error-details {
-    color: #666;
-    font-size: 0.9em;
-  }
-}
 }
 
 .xml-preview {
