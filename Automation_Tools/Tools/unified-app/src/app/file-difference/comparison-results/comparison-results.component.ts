@@ -227,7 +227,7 @@ export class ComparisonResultsComponent implements OnChanges {
         const sourceValue = sourceRow[header];
         
         // Add source value to row for display
-        tableRow.push(sourceValue !== undefined && sourceValue !== null ? sourceValue : 0);
+        tableRow.push(sourceValue !== undefined && sourceValue !== null ? sourceValue : '');
       }
       
       // Add row to table data
@@ -334,14 +334,7 @@ export class ComparisonResultsComponent implements OnChanges {
     // For CSV/XLSX files
     if (this.fileType === 'csv' || this.fileType === 'xlsx') {
       if (status === 'different') {
-        const diffValues = this.tableData.diffValueMap.get(key);
-        if (diffValues) {
-          // Check if this is a "Days Required" column or any other column
-          if (column === 'Days Required' || column === 'DAYS REQUIRED') {
-            return 'days-required-changed';
-          }
-          return 'source-value'; // Green for original values
-        }
+        return 'source-value'; // Green for original values
       } else if (status === 'source_only') {
         return 'source-only-value';
       } else if (status === 'target_only') {
@@ -368,11 +361,19 @@ export class ComparisonResultsComponent implements OnChanges {
     return diffValues ? diffValues.target : null;
   }
   
+  // Get source value for a cell (used to show original value)
+  getSourceValue(rowIndex: number | string, column: string): any {
+    const numericRowIndex = typeof rowIndex === 'string' ? parseInt(rowIndex, 10) : rowIndex;
+    const key = `${numericRowIndex}-${column}`;
+    const diffValues = this.tableData.diffValueMap.get(key);
+    return diffValues ? diffValues.source : null;
+  }
+  
   // Check if a cell has a difference
   hasDifference(rowIndex: number | string, column: string): boolean {
     const numericRowIndex = typeof rowIndex === 'string' ? parseInt(rowIndex, 10) : rowIndex;
     const key = `${numericRowIndex}-${column}`;
-    return this.tableData.diffMap.has(key) && this.tableData.diffMap.get(key) === 'different';
+    return this.tableData.diffMap.has(key);
   }
   
   // Clean node path for XML display

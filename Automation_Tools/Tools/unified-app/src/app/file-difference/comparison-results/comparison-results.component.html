@@ -193,12 +193,13 @@
           
           <!-- Dynamic columns based on headers -->
           <td *ngFor="let header of tableData.headers.slice(1); let colIndex = index">
-            <!-- If cell has a difference, show original value in green -->
+            <!-- If cell has a difference, show original value in green and changed value in red -->
             <ng-container *ngIf="hasDifference(rowIndex, header)">
+              <!-- Original value in green -->
               <div style="background-color: rgba(40, 167, 69, 0.2); color: #28a745; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px;">
-                {{ row[colIndex + 1] }}
+                {{ getSourceValue(rowIndex, header) }}
               </div>
-              <!-- Show changed value in red -->
+              <!-- Changed value in red -->
               <div style="background-color: rgba(220, 53, 69, 0.2); color: #dc3545; padding: 6px 10px; border-radius: 4px;">
                 {{ getTargetValue(rowIndex, header) }}
               </div>
