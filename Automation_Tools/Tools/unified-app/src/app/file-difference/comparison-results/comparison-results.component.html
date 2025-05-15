@@ -95,7 +95,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of processedRows; let i = index" [ngClass]="{'row-divider': i > 0}">
+        <!-- Iterate through processedRows, filtering out empty tags -->
+        <ng-container *ngFor="let row of processedRows; let i = index">
+          <tr *ngIf="row.sourceValue !== null && row.sourceValue !== '' || row.targetValue !== null && row.targetValue !== ''" 
+              [ngClass]="{'row-divider': i > 0}">
           <td class="path-cell">
             <div class="node-path">{{ cleanNodePath(row.path) }}</div>
           </td>
@@ -144,6 +147,7 @@
             <span *ngIf="row.status === 'source_only'"></span>
           </td>
         </tr>
+        </ng-container>
       </tbody>
     </table>
     </div>

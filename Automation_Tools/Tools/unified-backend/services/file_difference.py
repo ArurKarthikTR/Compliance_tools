@@ -119,19 +119,28 @@ class FileDifferenceService:
     def _process_xml(self, file_path):
         """Process an XML file and return its data"""
         try:
+            # Read the XML file as text to preserve original structure
+            with open(file_path, 'r', encoding='utf-8') as f:
+                xml_content = f.readlines()
+            
+            # Parse with ElementTree for structured data
             tree = ET.parse(file_path)
             root = tree.getroot()
             
             print(f"Processing XML file: {file_path}")
             print(f"Root tag: {root.tag}")
             
-            # Extract all nodes and their paths
+            # Extract all nodes and their paths while preserving source order
             all_nodes = {}  # Dictionary to store node paths and their values
+            ordered_paths = []  # List to preserve the order of paths in source file
             
             # Keep track of element occurrences to handle repeated elements
             element_counts = {}
             
-            def process_element(element, path=""):
+            # Track parent-child relationships for proper ordering
+            path_hierarchy = {}
+            
+            def process_element(element, path="", depth=0):
                 """Process element and its children, collecting paths and values"""
                 # Build current element path
                 current_path = path + "/" + element.tag if path else element.tag
@@ -145,42 +154,48 @@ class FileDifferenceService:
                     element_counts[element_key] = 1
                     indexed_path = f"{current_path}[{element_counts[element_key]}]"
                 
-                # Process attributes
+                # Add this path to ordered_paths if it contains a value or attribute
+                has_content = False
+                
+                # Process attributes - add these first
                 for attr_name, attr_value in element.attrib.items():
                     attr_path = f"{indexed_path}/@{attr_name}"
                     all_nodes[attr_path] = attr_value
+                    ordered_paths.append(attr_path)
+                    has_content = True
                     print(f"Found attribute: {attr_path} = {attr_value}")
                 
                 # Process text content
                 if element.text and element.text.strip():
                     text_content = element.text.strip()
                     all_nodes[indexed_path] = text_content
+                    ordered_paths.append(indexed_path)  # Add to ordered list
+                    has_content = True
                     print(f"Found text node: {indexed_path} = {text_content}")
+                elif not element.attrib and len(list(element)) == 0:
+                    # Element with no attributes, no text, and no children - mark as empty
+                    all_nodes[indexed_path] = ""
+                    # We still track it in ordered_paths for structure consistency
+                    # but mark it with a special property to filter in the frontend if needed
+                    ordered_paths.append(indexed_path)
+                    all_nodes[indexed_path + "_isEmpty"] = True
                 
-                # Reset element counts for each level of nesting to ensure proper counting
-                local_counts = {}
+                # Store parent-child relationship for ordering
+                if path in path_hierarchy:
+                    path_hierarchy[path].append(indexed_path)
+                else:
+                    path_hierarchy[path] = [indexed_path]
                 
-                # Process child elements
+                # Process child elements in document order
                 for child in element:
-                    child_key = child.tag
-                    
-                    # Track occurrences at this level
-                    if child_key in local_counts:
-                        local_counts[child_key] += 1
-                    else:
-                        local_counts[child_key] = 1
-                    
-                    # Build the path including the index for repeated elements
-                    child_path = f"{indexed_path}"
-                    
-                    process_element(child, child_path)
+                    process_element(child, indexed_path, depth + 1)
             
             # Start processing from the root
-            for child in root:
-                process_element(child)
+            process_element(root)
             
             # Create a standardized format for comparison
-            columns = list(all_nodes.keys())
+            # Use ordered_paths to keep original source file order, preserving hierarchy
+            columns = ordered_paths if ordered_paths else list(all_nodes.keys())
             
             # Create a single row with all paths and values
             row = {col: all_nodes[col] for col in columns}
@@ -194,7 +209,8 @@ class FileDifferenceService:
             
             return {
                 'columns': columns,
-                'rows': [row]  # Return as a single row containing all XML paths
+                'rows': [row],  # Return as a single row containing all XML paths
+                'originalLines': xml_content  # Include original file lines for reference
             }
         except Exception as e:
             import traceback
@@ -313,12 +329,21 @@ class FileDifferenceService:
             dict: Comparison result with differences highlighted
         """
         try:
-            # Get all columns (union of both files' columns)
-            all_columns = list(set(source_data.get('columns', []) + target_data.get('columns', [])))
+            # Use the columns from source_data to maintain source file order
+            source_columns = source_data.get('columns', [])
+            # Get columns from target that aren't in source
+            target_columns = [col for col in target_data.get('columns', []) if col not in source_columns]
+            
+            # Maintain source file order first, then add any target-only columns at the end
+            all_columns = source_columns + target_columns
+            
+            # Add columns to the result to ensure frontend preserves the order
+            comparison_columns = source_columns.copy()
             
             # Prepare comparison result
             comparison_result = {
                 'fileType': 'xml',
+                'columns': comparison_columns,  # Include source columns in order
                 'summary': {
                     'totalRows': len(all_columns),
                     'matchingRows': 0,
@@ -366,11 +391,17 @@ class FileDifferenceService:
                     status = 'different'  # Values differ
                     row_comparison['hasDifferences'] = True
                 
+                # Check if this is an empty node
+                is_empty = False
+                if col + "_isEmpty" in source_row:
+                    is_empty = source_row[col + "_isEmpty"]
+                
                 # Add to cells
                 row_comparison['cells'][col] = {
                     'sourceValue': source_value,
                     'targetValue': target_value,
-                    'status': status
+                    'status': status,
+                    'isEmpty': is_empty
                 }
                 
                 # Update summary
@@ -381,6 +412,10 @@ class FileDifferenceService:
             
             # Add row comparison to result
             comparison_result['rows'].append(row_comparison)
+            
+            # Include original source file structure information
+            if 'originalLines' in source_data:
+                comparison_result['originalSourceLines'] = source_data['originalLines']
             
             return comparison_result
         except Exception as e:

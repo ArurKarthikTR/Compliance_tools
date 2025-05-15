@@ -98,16 +98,25 @@ export class ComparisonResultsComponent implements OnChanges {
     // Create a map to store unique paths and their values
     const pathMap = new Map<string, ProcessedRow>();
     // Store original order of paths as they appear in source
-    const pathOrder: string[] = [];
+    let orderedPaths: string[] = [];
+    
+    // Check if we have columns data from the backend (these represent paths in source order)
+    // This is crucial for maintaining the original XML structure order
+    if (this.comparisonData.columns && Array.isArray(this.comparisonData.columns)) {
+      console.log('Using backend-provided column order:', this.comparisonData.columns.length);
+      orderedPaths = [...this.comparisonData.columns];
+    }
     
     // Process each row (each row represents a node in XML)
     this.comparisonData.rows.forEach((row: any) => {
       // For XML, each row.cells object contains paths and their comparison info
       Object.entries(row.cells || {}).forEach(([path, cell]: [string, any]) => {
-        if (cell) {
-          // If path not already tracked in order, add it
-          if (!pathOrder.includes(path)) {
-            pathOrder.push(path);
+              // Process cells (we'll filter out empty nodes later)
+              if (cell) {
+          // If we don't have orderedPaths from backend and path not already tracked, add it
+          // This is a fallback but we should always prefer the backend-provided order
+          if (orderedPaths.length === 0 && !pathMap.has(path)) {
+            orderedPaths.push(path);
           }
           
           totalNodesCount++;
@@ -168,10 +177,26 @@ export class ComparisonResultsComponent implements OnChanges {
     
     // Use the original path order from source file
     this.processedRows = [];
-    pathOrder.forEach(path => {
+    
+    // Ensure all paths are included, even if they weren't in the orderedPaths array
+    // This handles any target-only paths that might exist
+    const allPaths = new Set([...orderedPaths, ...Array.from(pathMap.keys())]);
+    
+    // First add paths in the ordered list to maintain source file structure
+    orderedPaths.forEach(path => {
       const row = pathMap.get(path);
       if (row) {
         this.processedRows.push(row);
+      }
+    });
+    
+    // Then add any remaining paths that weren't in the ordered list (target-only paths)
+    allPaths.forEach(path => {
+      if (!orderedPaths.includes(path)) {
+        const row = pathMap.get(path);
+        if (row) {
+          this.processedRows.push(row);
+        }
       }
     });
     
@@ -284,11 +309,15 @@ export class ComparisonResultsComponent implements OnChanges {
       if (this.showOnlyDifferences) {
         // Show only rows with changed values (different status)
         this.processedRows = this.allXmlRows.filter(row => 
-          row.status === 'different' || row.status === 'source_only' || row.status === 'target_only'
+          (row.status === 'different' || row.status === 'source_only' || row.status === 'target_only') &&
+          // Also filter out empty values
+          (row.sourceValue !== null && row.sourceValue !== '' || row.targetValue !== null && row.targetValue !== '')
         );
       } else {
-        // Show all rows
-        this.processedRows = [...this.allXmlRows];
+        // Show all rows but still filter out empty tags
+        this.processedRows = this.allXmlRows.filter(row => 
+          (row.sourceValue !== null && row.sourceValue !== '' || row.targetValue !== null && row.targetValue !== '')
+        );
       }
       
       console.log(`Filtered XML rows to ${this.processedRows.length} rows (showing only changes: ${this.showOnlyDifferences})`);
