@@ -1,7 +1,32 @@
-.container {
-  max-width: 1000px;
-  margin: 0 auto;
+:host {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 100%; /* Use min-height instead of fixed height */
+  background-color: white;
+  box-sizing: border-box;
   padding: 20px;
+  margin: 0;
+  overflow-x: hidden;
+  text-align: center;
+  width: 100%;
+}
+
+/* Wrapper for the entire component content */
+:host > div {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.container {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 25px;
+  background-color: inherit;
+  border-radius: 10px;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
 }
 
 h2 {
@@ -64,6 +89,7 @@ h3 {
   padding: 20px;
 }
 
+<<<<<<< HEAD
 .fields-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -73,6 +99,12 @@ h3 {
 .field-card {
   border: 1px solid #ddd;
   border-radius: 8px;
+=======
+.field-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 15px;
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
   overflow: hidden;
 }
 

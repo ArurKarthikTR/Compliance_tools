@@ -36,13 +36,14 @@ class FileDifferenceService:
             # Read CSV file and handle potential errors
             df = pd.read_csv(file_path)
             
+            # Drop unnamed columns (these are often empty columns)
+            unnamed_cols = [col for col in df.columns if 'Unnamed:' in str(col)]
+            if unnamed_cols:
+                df = df.drop(columns=unnamed_cols)
+            
             # Handle potential NaN values and convert to appropriate types
             df = df.fillna('')
             
-            # Convert all numeric columns to string to ensure consistent comparison
-            for col in df.select_dtypes(include=['number']).columns:
-                df[col] = df[col].astype(str)
-                
             # Convert DataFrame to a standardized format
             columns = df.columns.tolist()
             
@@ -55,9 +56,6 @@ class FileDifferenceService:
                     value = row[col]
                     if pd.isna(value):
                         row_dict[col] = None
-                    elif isinstance(value, (int, float)):
-                        # Format numbers consistently
-                        row_dict[col] = str(value)
                     else:
                         row_dict[col] = str(value) if value != '' else None
                 rows.append(row_dict)
@@ -76,28 +74,19 @@ class FileDifferenceService:
     def _process_excel(self, file_path):
         """Process an Excel file and return its data"""
         try:
-            # Try to read with header in row 0 (default)
+            print(f"Processing Excel file: {file_path}")
+            
+            # Read Excel file with explicit engine
             df = pd.read_excel(file_path, engine='openpyxl')
             
-            # Check if columns are unnamed
-            unnamed_count = sum(1 for col in df.columns if 'Unnamed:' in str(col))
+            # Drop unnamed columns (these are often empty columns)
+            unnamed_cols = [col for col in df.columns if 'Unnamed:' in str(col)]
+            if unnamed_cols:
+                df = df.drop(columns=unnamed_cols)
             
-            # If most columns are unnamed, try reading with header in row 1
-            if unnamed_count > len(df.columns) / 2:
-                df = pd.read_excel(file_path, engine='openpyxl', header=1)
-                
-                # If still unnamed, try row 2
-                unnamed_count = sum(1 for col in df.columns if 'Unnamed:' in str(col))
-                if unnamed_count > len(df.columns) / 2:
-                    df = pd.read_excel(file_path, engine='openpyxl', header=2)
-            
-            # Handle potential NaN values and convert to appropriate types
+            # Handle potential NaN values
             df = df.fillna('')
             
-            # Convert all numeric columns to string to ensure consistent comparison
-            for col in df.select_dtypes(include=['number']).columns:
-                df[col] = df[col].astype(str)
-                
             # Convert DataFrame to a standardized format
             columns = df.columns.tolist()
             
@@ -110,12 +99,11 @@ class FileDifferenceService:
                     value = row[col]
                     if pd.isna(value):
                         row_dict[col] = None
-                    elif isinstance(value, (int, float)):
-                        # Format numbers consistently
-                        row_dict[col] = str(value)
                     else:
                         row_dict[col] = str(value) if value != '' else None
                 rows.append(row_dict)
+            
+            print(f"Processed Excel file with {len(columns)} columns and {len(rows)} rows")
             
             return {
                 'columns': columns,
@@ -131,75 +119,98 @@ class FileDifferenceService:
     def _process_xml(self, file_path):
         """Process an XML file and return its data"""
         try:
+            # Read the XML file as text to preserve original structure
+            with open(file_path, 'r', encoding='utf-8') as f:
+                xml_content = f.readlines()
+            
+            # Parse with ElementTree for structured data
             tree = ET.parse(file_path)
             root = tree.getroot()
             
-            # Extract paths to all nodes to use as columns
-            all_paths = set()
+            print(f"Processing XML file: {file_path}")
+            print(f"Root tag: {root.tag}")
             
-            def collect_paths(element, current_path=""):
-                path = current_path + "/" + element.tag if current_path else element.tag
+            # Extract all nodes and their paths while preserving source order
+            all_nodes = {}  # Dictionary to store node paths and their values
+            ordered_paths = []  # List to preserve the order of paths in source file
+            
+            # Keep track of element occurrences to handle repeated elements
+            element_counts = {}
+            
+            # Track parent-child relationships for proper ordering
+            path_hierarchy = {}
+            
+            def process_element(element, path="", depth=0):
+                """Process element and its children, collecting paths and values"""
+                # Build current element path
+                current_path = path + "/" + element.tag if path else element.tag
                 
-                # Add attributes as paths
+                # Handle repeated elements by adding index
+                element_key = f"{current_path}"
+                if element_key in element_counts:
+                    element_counts[element_key] += 1
+                    indexed_path = f"{current_path}[{element_counts[element_key]}]"
+                else:
+                    element_counts[element_key] = 1
+                    indexed_path = f"{current_path}[{element_counts[element_key]}]"
+                
+                # Add this path to ordered_paths if it contains a value or attribute
+                has_content = False
+                
+                # Process attributes - add these first
                 for attr_name, attr_value in element.attrib.items():
-                    attr_path = f"{path}[@{attr_name}]"
-                    all_paths.add(attr_path)
+                    attr_path = f"{indexed_path}/@{attr_name}"
+                    all_nodes[attr_path] = attr_value
+                    ordered_paths.append(attr_path)
+                    has_content = True
+                    print(f"Found attribute: {attr_path} = {attr_value}")
                 
-                # Add element path if it has text
+                # Process text content
                 if element.text and element.text.strip():
-                    all_paths.add(path)
+                    text_content = element.text.strip()
+                    all_nodes[indexed_path] = text_content
+                    ordered_paths.append(indexed_path)  # Add to ordered list
+                    has_content = True
+                    print(f"Found text node: {indexed_path} = {text_content}")
+                elif not element.attrib and len(list(element)) == 0:
+                    # Element with no attributes, no text, and no children - mark as empty
+                    all_nodes[indexed_path] = ""
+                    # We still track it in ordered_paths for structure consistency
+                    # but mark it with a special property to filter in the frontend if needed
+                    ordered_paths.append(indexed_path)
+                    all_nodes[indexed_path + "_isEmpty"] = True
                 
-                # Process children
+                # Store parent-child relationship for ordering
+                if path in path_hierarchy:
+                    path_hierarchy[path].append(indexed_path)
+                else:
+                    path_hierarchy[path] = [indexed_path]
+                
+                # Process child elements in document order
                 for child in element:
-                    collect_paths(child, path)
+                    process_element(child, indexed_path, depth + 1)
             
-            # Start collecting paths from root's children
-            for child in root:
-                collect_paths(child)
+            # Start processing from the root
+            process_element(root)
             
-            columns = sorted(list(all_paths))
+            # Create a standardized format for comparison
+            # Use ordered_paths to keep original source file order, preserving hierarchy
+            columns = ordered_paths if ordered_paths else list(all_nodes.keys())
             
-            # Process each child element as a row
-            rows = []
-            for child in root:
-                row_dict = {}
-                
-                # Function to extract values based on path
-                def extract_value(element, path_parts):
-                    if not path_parts:
-                        return None
-                        
-                    current = path_parts[0]
-                    
-                    # Handle attribute paths
-                    if current.startswith("[") and current.endswith("]"):
-                        attr_name = current[2:-1]  # Extract attribute name
-                        return element.attrib.get(attr_name)
-                        
-                    # Handle element paths
-                    if current == element.tag:
-                        if len(path_parts) == 1:
-                            # This is the target element
-                            return element.text.strip() if element.text else None
-                        else:
-                            # Need to go deeper
-                            for child in element:
-                                result = extract_value(child, path_parts[1:])
-                                if result is not None:
-                                    return result
-                    
-                    return None
-                
-                # Extract values for each path
-                for col in columns:
-                    path_parts = col.split("/")
-                    row_dict[col] = extract_value(child, path_parts)
-                    
-                rows.append(row_dict)
+            # Create a single row with all paths and values
+            row = {col: all_nodes[col] for col in columns}
+            
+            print(f"Processed XML with {len(columns)} paths:")
+            for col in columns[:10]:  # Print first 10 for debugging
+                print(f"  {col}: {row[col]}")
+            
+            if len(columns) > 10:
+                print(f"  ... and {len(columns) - 10} more")
             
             return {
                 'columns': columns,
-                'rows': rows
+                'rows': [row],  # Return as a single row containing all XML paths
+                'originalLines': xml_content  # Include original file lines for reference
             }
         except Exception as e:
             import traceback
@@ -220,321 +231,255 @@ class FileDifferenceService:
         Returns:
             dict: Comparison result with differences highlighted
         """
+        if file_type == 'xml':
+            return self.compare_xml_files(source_data, target_data)
+        else:
+            return self.compare_csv_xlsx_files(source_data, target_data, file_type)
+    
+    def compare_csv_xlsx_files(self, source_data, target_data, file_type):
+        """
+        Compare two CSV or XLSX files and generate a difference report
+        
+        Args:
+            source_data (dict): Source file data in standardized format
+            target_data (dict): Target file data in standardized format
+            file_type (str): Type of the files being compared ('csv' or 'xlsx')
+            
+        Returns:
+            dict: Comparison result with differences highlighted
+        """
         try:
-            # Print debug information
-            print(f"Source data structure: {source_data.keys() if isinstance(source_data, dict) else 'Not a dict'}")
-            print(f"Target data structure: {target_data.keys() if isinstance(target_data, dict) else 'Not a dict'}")
-            
-            if 'columns' in source_data:
-                print(f"Source columns: {source_data['columns']}")
-            if 'rows' in source_data:
-                print(f"Source rows count: {len(source_data['rows'])}")
-            if 'columns' in target_data:
-                print(f"Target columns: {target_data['columns']}")
-            if 'rows' in target_data:
-                print(f"Target rows count: {len(target_data['rows'])}")
-            
-            # Ensure both files have the same structure
-            if not self._validate_structure(source_data, target_data):
-                raise ValueError("Files have incompatible structures for comparison")
-            
             # Get all columns (union of both files' columns)
-            all_columns = sorted(list(set(source_data['columns'] + target_data['columns'])))
-            print(f"All columns for comparison: {all_columns}")
+            all_columns = list(set(source_data.get('columns', []) + target_data.get('columns', [])))
             
             # Prepare comparison result
             comparison_result = {
                 'fileType': file_type,
-                'columns': all_columns,
-                'rows': [],
+                'headers': source_data.get('columns', []),  # Use source file column order
+                'sourceData': source_data.get('rows', []),
+                'targetData': target_data.get('rows', []),  # Include target data for comparison
                 'summary': {
-                    'totalRows': max(len(source_data['rows']), len(target_data['rows'])),
+                    'totalRows': len(source_data.get('rows', [])),
                     'matchingRows': 0,
-                    'differingRows': 0,
-                    'extraRowsInSource': 0,
-                    'extraRowsInTarget': 0
-                }
+                    'differingRows': 0
+                },
+                'differences': []  # Array to store differences
             }
-        except Exception as e:
-            import traceback
-            error_details = traceback.format_exc()
-            print(f"Error in compare_files initial setup: {str(e)}")
-            print(f"Error details: {error_details}")
-            raise
-        
-        # Compare rows
-        source_rows = source_data['rows']
-        target_rows = target_data['rows']
-        
-        # Find matching rows and differences
-        matched_target_indices = set()
-        
-        for source_idx, source_row in enumerate(source_rows):
-            best_match_idx = self._find_best_match(source_row, target_rows, matched_target_indices)
             
-            if best_match_idx is not None:
-                # Found a matching row
-                target_row = target_rows[best_match_idx]
-                matched_target_indices.add(best_match_idx)
+            # Create a map of source rows for easier lookup
+            source_rows = source_data.get('rows', [])
+            target_rows = target_data.get('rows', [])
+            
+            # Compare each row in source with corresponding row in target
+            for source_idx, source_row in enumerate(source_rows):
+                row_has_differences = False
                 
-                # Compare the rows cell by cell
-                row_comparison = self._compare_row(source_row, target_row, all_columns)
+                # Get corresponding target row if it exists
+                target_row = target_rows[source_idx] if source_idx < len(target_rows) else {}
                 
-                if row_comparison['hasDifferences']:
+                # Compare each column
+                for col in all_columns:
+                    source_value = source_row.get(col)
+                    target_value = target_row.get(col)
+                    
+                    # Normalize values for comparison
+                    source_str = str(source_value).strip() if source_value is not None else None
+                    target_str = str(target_value).strip() if target_value is not None else None
+                    
+                    # Handle empty strings as None
+                    if source_str == "":
+                        source_str = None
+                    if target_str == "":
+                        target_str = None
+                    
+                    # Compare values
+                    if source_str != target_str:
+                        row_has_differences = True
+                        # Add to differences array
+                        comparison_result['differences'].append({
+                            'rowIndex': source_idx,
+                            'column': col,
+                            'sourceValue': source_value,
+                            'targetValue': target_value
+                        })
+                
+                # Update summary
+                if row_has_differences:
                     comparison_result['summary']['differingRows'] += 1
                 else:
                     comparison_result['summary']['matchingRows'] += 1
-                    
-                comparison_result['rows'].append(row_comparison)
-            else:
-                # Row exists only in source
-                comparison_result['summary']['extraRowsInSource'] += 1
-                row_comparison = {
-                    'rowIndex': source_idx,
-                    'hasDifferences': True,
-                    'cells': {}
-                }
-                
-                for col in all_columns:
-                    value = source_row.get(col)
-                    row_comparison['cells'][col] = {
-                        'sourceValue': value,
-                        'targetValue': None,
-                        'status': 'source_only'
-                    }
-                
-                comparison_result['rows'].append(row_comparison)
-        
-        # Add rows that exist only in target
-        for target_idx, target_row in enumerate(target_rows):
-            if target_idx not in matched_target_indices:
-                comparison_result['summary']['extraRowsInTarget'] += 1
-                row_comparison = {
-                    'rowIndex': target_idx,
-                    'hasDifferences': True,
-                    'cells': {}
-                }
-                
-                for col in all_columns:
-                    value = target_row.get(col)
-                    row_comparison['cells'][col] = {
-                        'sourceValue': None,
-                        'targetValue': value,
-                        'status': 'target_only'
-                    }
-                
-                comparison_result['rows'].append(row_comparison)
-        
-        return comparison_result
-
-    def _validate_structure(self, source_data, target_data):
+            
+            return comparison_result
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error comparing CSV/XLSX files: {str(e)}")
+            print(f"Error details: {error_details}")
+            raise Exception(f"Error comparing CSV/XLSX files: {str(e)}")
+    
+    def compare_xml_files(self, source_data, target_data):
         """
-        Validate that both files have compatible structures for comparison
+        Compare two XML files and generate a difference report
         
         Args:
-            source_data (dict): Source file data
-            target_data (dict): Target file data
+            source_data (dict): Source file data in standardized format
+            target_data (dict): Target file data in standardized format
             
         Returns:
-            bool: True if structures are compatible, False otherwise
+            dict: Comparison result with differences highlighted
         """
-        # Basic structure validation
-        if not isinstance(source_data, dict) or not isinstance(target_data, dict):
-            return False
-        
-        if 'columns' not in source_data or 'rows' not in source_data:
-            return False
-        
-        if 'columns' not in target_data or 'rows' not in target_data:
-            return False
-        
-        # Files can have different columns, we'll handle that in the comparison
-        return True
-
-    def _find_best_match(self, source_row, target_rows, matched_indices):
-        """
-        Find the best matching row in target_rows for the given source_row
-        
-        Args:
-            source_row (dict): Source row
-            target_rows (list): List of target rows
-            matched_indices (set): Set of already matched target row indices
+        try:
+            # Use the columns from source_data to maintain source file order
+            source_columns = source_data.get('columns', [])
+            # Get columns from target that aren't in source
+            target_columns = [col for col in target_data.get('columns', []) if col not in source_columns]
             
-        Returns:
-            int or None: Index of the best matching row, or None if no match found
-        """
-        best_match_idx = None
-        best_match_score = 0
-        
-        for idx, target_row in enumerate(target_rows):
-            if idx in matched_indices:
-                continue
+            # Maintain source file order first, then add any target-only columns at the end
+            all_columns = source_columns + target_columns
             
-            # Calculate similarity score
-            score = self._calculate_similarity(source_row, target_row)
+            # Add columns to the result to ensure frontend preserves the order
+            comparison_columns = source_columns.copy()
             
-            if score > best_match_score:
-                best_match_score = score
-                best_match_idx = idx
-        
-        # Use a threshold to determine if it's a good match
-        # This helps with detecting moved rows vs completely different rows
-        if best_match_score < 0.3:  # Require at least 30% similarity
-            return None
-        
-        return best_match_idx
-
-    def _calculate_similarity(self, row1, row2):
-        """
-        Calculate similarity score between two rows
-        
-        Args:
-            row1 (dict): First row
-            row2 (dict): Second row
-            
-        Returns:
-            float: Similarity score (0-1)
-        """
-        # Get common keys
-        common_keys = set(row1.keys()) & set(row2.keys())
-        
-        if not common_keys:
-            return 0
-        
-        # Count matching values with weighted scoring
-        matches = 0
-        total_weight = 0
-        
-        for key in common_keys:
-            # Skip None values
-            if row1.get(key) is None or row2.get(key) is None:
-                continue
-                
-            # Convert values to strings for comparison
-            val1 = str(row1.get(key)).strip() if row1.get(key) is not None else ""
-            val2 = str(row2.get(key)).strip() if row2.get(key) is not None else ""
-            
-            # Calculate string similarity
-            if val1 == val2:
-                weight = 1.0
-            else:
-                # Check for partial matches
-                similarity = self._string_similarity(val1, val2)
-                weight = similarity
-            
-            matches += weight
-            total_weight += 1
-        
-        # Calculate similarity score
-        if total_weight == 0:
-            return 0
-        
-        return matches / total_weight
-
-    def _string_similarity(self, s1, s2):
-        """
-        Calculate similarity between two strings
-        
-        Args:
-            s1 (str): First string
-            s2 (str): Second string
-            
-        Returns:
-            float: Similarity score (0-1)
-        """
-        # Simple implementation of string similarity
-        # For more sophisticated comparison, consider using libraries like difflib
-        
-        # If strings are identical
-        if s1 == s2:
-            return 1.0
-            
-        # If one string is empty
-        if not s1 or not s2:
-            return 0.0
-        
-        # Calculate Levenshtein distance
-        distance = self._levenshtein_distance(s1, s2)
-        max_len = max(len(s1), len(s2))
-        
-        if max_len == 0:
-            return 1.0
-            
-        return 1.0 - (distance / max_len)
-
-    def _levenshtein_distance(self, s1, s2):
-        """
-        Calculate Levenshtein distance between two strings
-        
-        Args:
-            s1 (str): First string
-            s2 (str): Second string
-            
-        Returns:
-            int: Levenshtein distance
-        """
-        if len(s1) < len(s2):
-            return self._levenshtein_distance(s2, s1)
-        
-        if len(s2) == 0:
-            return len(s1)
-        
-        previous_row = range(len(s2) + 1)
-        for i, c1 in enumerate(s1):
-            current_row = [i + 1]
-            for j, c2 in enumerate(s2):
-                insertions = previous_row[j + 1] + 1
-                deletions = current_row[j] + 1
-                substitutions = previous_row[j] + (c1 != c2)
-                current_row.append(min(insertions, deletions, substitutions))
-            previous_row = current_row
-        
-        return previous_row[-1]
-
-    def _compare_row(self, source_row, target_row, all_columns):
-        """
-        Compare two rows cell by cell
-        
-        Args:
-            source_row (dict): Source row
-            target_row (dict): Target row
-            all_columns (list): List of all columns
-            
-        Returns:
-            dict: Row comparison result
-        """
-        row_comparison = {
-            'hasDifferences': False,
-            'cells': {}
-        }
-        
-        for col in all_columns:
-            source_value = source_row.get(col)
-            target_value = target_row.get(col)
-            
-            # Normalize values for comparison
-            source_str = str(source_value).strip() if source_value is not None else None
-            target_str = str(target_value).strip() if target_value is not None else None
-            
-            # Handle empty strings as None
-            if source_str == "":
-                source_str = None
-            if target_str == "":
-                target_str = None
-                
-            if source_str == target_str:
-                status = 'match'
-            else:
-                status = 'different'
-                row_comparison['hasDifferences'] = True
-            
-            row_comparison['cells'][col] = {
-                'sourceValue': source_value,
-                'targetValue': target_value,
-                'status': status
+            # Prepare comparison result
+            comparison_result = {
+                'fileType': 'xml',
+                'columns': comparison_columns,  # Include source columns in order
+                'summary': {
+                    'totalRows': len(all_columns),
+                    'matchingRows': 0,
+                    'differingRows': 0
+                },
+                'rows': []  # Array to store row comparisons
             }
-        
-        return row_comparison
+            
+            # Get source and target rows (for XML, there's typically just one row with all paths)
+            source_row = source_data.get('rows', [{}])[0] if source_data.get('rows') else {}
+            target_row = target_data.get('rows', [{}])[0] if target_data.get('rows') else {}
+            
+            # Compare each path
+            row_comparison = {
+                'hasDifferences': False,
+                'cells': {}
+            }
+            
+            for col in all_columns:
+                source_value = source_row.get(col)
+                target_value = target_row.get(col)
+                
+                # Normalize values for comparison
+                source_str = str(source_value).strip() if source_value is not None else None
+                target_str = str(target_value).strip() if target_value is not None else None
+                
+                # Handle empty strings as None
+                if source_str == "":
+                    source_str = None
+                if target_str == "":
+                    target_str = None
+                
+                # Determine status
+                if source_str is None and target_str is None:
+                    status = 'match'  # Both are null/empty
+                elif source_str is None:
+                    status = 'target_only'  # Only in target
+                    row_comparison['hasDifferences'] = True
+                elif target_str is None:
+                    status = 'source_only'  # Only in source
+                    row_comparison['hasDifferences'] = True
+                elif source_str == target_str:
+                    status = 'match'  # Values match
+                else:
+                    status = 'different'  # Values differ
+                    row_comparison['hasDifferences'] = True
+                
+                # Check if this is an empty node
+                is_empty = False
+                if col + "_isEmpty" in source_row:
+                    is_empty = source_row[col + "_isEmpty"]
+                
+                # Add to cells
+                row_comparison['cells'][col] = {
+                    'sourceValue': source_value,
+                    'targetValue': target_value,
+                    'status': status,
+                    'isEmpty': is_empty
+                }
+                
+                # Update summary
+                if status == 'match':
+                    comparison_result['summary']['matchingRows'] += 1
+                else:
+                    comparison_result['summary']['differingRows'] += 1
+            
+            # Add row comparison to result
+            comparison_result['rows'].append(row_comparison)
+            
+            # Include original source file structure information
+            if 'originalLines' in source_data:
+                comparison_result['originalSourceLines'] = source_data['originalLines']
+            
+            return comparison_result
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error comparing XML files: {str(e)}")
+            print(f"Error details: {error_details}")
+            raise Exception(f"Error comparing XML files: {str(e)}")
+    
+    def preview_file(self, request):
+        """
+        Process a single file and return a preview of its data
+        """
+        try:
+            # Check if file is present in the request
+            if 'file' not in request.files:
+                return jsonify({'error': 'File is required'}), 400
+            
+            file = request.files['file']
+            
+            # Check if filename is empty
+            if file.filename == '':
+                return jsonify({'error': 'No selected file'}), 400
+            
+            # Check if file is allowed type
+            if not self.allowed_file(file.filename):
+                return jsonify({'error': 'File type not supported'}), 400
+            
+            # Get file type
+            file_type = self.get_file_type(file.filename)
+            
+            # Save file
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(self.upload_folder, filename)
+            file.save(file_path)
+            
+            print(f"File saved to {file_path}, processing for preview...")
+            
+            # Process file based on its type
+            try:
+                preview_data = self.process_file(file_path, file_type)
+                
+                # For preview, limit to first 10 rows
+                if 'rows' in preview_data and len(preview_data['rows']) > 10:
+                    preview_data['rows'] = preview_data['rows'][:10]
+                
+                print(f"Preview data generated successfully with {len(preview_data.get('rows', []))} rows")
+                return jsonify(preview_data)
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"Error processing file for preview: {str(e)}")
+                print(f"Error details: {error_details}")
+                
+                # Return a more informative error response
+                return jsonify({
+                    'error': f"Error processing file: {str(e)}",
+                    'columns': ['Error'],
+                    'rows': [{'Error': f"Could not process file: {str(e)}"}]
+                }), 500
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            return jsonify({'error': str(e), 'details': error_details}), 500
     
     def upload_files(self, request):
         """

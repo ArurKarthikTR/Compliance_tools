@@ -1,0 +1,21 @@
+<root>
+  <person
+  firstname="Carlie"
+  lastname="Torray"
+  city="Skopje"
+  country="Uganda"
+  firstname2="Annora"
+  lastname2="Leopold"
+  email="Annora.Leopold@yopmail.com"
+  />
+  <random>41</random>
+  <random_float>56.975</random_float>
+  <bool>false</bool>
+  <date>1990-11-20</date>
+  <regEx>helloooooo world</regEx>
+  <enum>online</enum>
+  <elt>Marika</elt><elt>Nessie</elt><elt>Cristine</elt><elt>Kirbee</elt><elt>Phedra</elt>  
+  <Annora>
+    <age>34</age>
+  </Annora>
+</root>

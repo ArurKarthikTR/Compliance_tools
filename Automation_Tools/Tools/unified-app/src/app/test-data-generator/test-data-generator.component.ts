@@ -25,6 +25,7 @@ export class TestDataGeneratorComponent implements OnInit {
   successMessage: string = '';
   
   fieldTypes: FieldType[] = [
+<<<<<<< HEAD
     { value: 'String', label: 'String', hasOptions: true, optionsConfig: { minLength: 5, maxLength: 20 } },
     { value: 'Number', label: 'Number', hasOptions: true, optionsConfig: { min: 0, max: 100, length: 5 } },
     { value: 'Boolean', label: 'Boolean', hasOptions: false },
@@ -42,6 +43,27 @@ export class TestDataGeneratorComponent implements OnInit {
     type: 'String',
     unique: false,
     options: {}
+=======
+    { value: 'Name', label: 'Name', hasOptions: false },
+    { value: 'String', label: 'String', hasOptions: true, optionsConfig: { minLength: 5, maxLength: 20 } },
+    { value: 'Number', label: 'Number', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 0 } },
+    { value: 'Date', label: 'Date', hasOptions: true, optionsConfig: { format: 'YYYY-MM-DD' } },
+    { value: 'Email', label: 'Email', hasOptions: false },
+    { value: 'Address', label: 'Address', hasOptions: false },
+    { value: 'Country', label: 'Country', hasOptions: false },
+    { value: 'Boolean', label: 'Boolean', hasOptions: false },
+    { value: 'Float', label: 'Float', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
+    { value: 'Decimal', label: 'Decimal', hasOptions: true, optionsConfig: { min: 0, max: 100, precision: 2 } },
+    { value: 'Phone', label: 'Phone', hasOptions: false }
+  ];
+  
+  showFieldForm: boolean = false;
+  newField: FieldConfig = {
+    id: '',
+    name: '',
+    type: 'Name',
+    unique: false
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
   };
 
   constructor(
@@ -70,13 +92,19 @@ export class TestDataGeneratorComponent implements OnInit {
       this.newField = {
         id: this.generateId(),
         name: '',
+<<<<<<< HEAD
         type: 'String',
         unique: false,
         options: { minLength: 5, maxLength: 20 }
+=======
+        type: 'Name',
+        unique: false
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
       };
     }
   }
 
+<<<<<<< HEAD
   updateNewFieldOptions(): void {
     const selectedType = this.fieldTypes.find(type => type.value === this.newField.type);
     
@@ -91,6 +119,10 @@ export class TestDataGeneratorComponent implements OnInit {
     this.showFieldForm = false;
     this.isEditMode = false;
     this.editingFieldIndex = -1;
+=======
+  cancelAddField(): void {
+    this.showFieldForm = false;
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
   }
 
   saveNewField(): void {
@@ -103,6 +135,7 @@ export class TestDataGeneratorComponent implements OnInit {
       id: [this.newField.id],
       name: [this.newField.name, Validators.required],
       type: [this.newField.type, Validators.required],
+<<<<<<< HEAD
       options: this.fb.group(this.newField.options || {}),
       unique: [this.newField.unique]
     });
@@ -128,6 +161,15 @@ export class TestDataGeneratorComponent implements OnInit {
       unique: false,
       options: { minLength: 5, maxLength: 20 }
     };
+=======
+      options: this.fb.group({}),
+      unique: [this.newField.unique]
+    });
+
+    this.fields.push(fieldGroup);
+    this.showFieldForm = false;
+    this.errorMessage = '';
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
   }
 
   removeField(index: number): void {
@@ -148,6 +190,7 @@ export class TestDataGeneratorComponent implements OnInit {
   }
 
   editField(index: number): void {
+<<<<<<< HEAD
     const fieldGroup = this.fields.at(index) as FormGroup;
     
     // Set edit mode
@@ -165,6 +208,11 @@ export class TestDataGeneratorComponent implements OnInit {
     
     // Show the form
     this.showFieldForm = true;
+=======
+    // This would typically open a modal or form for editing
+    // For now, we'll just log that the edit button was clicked
+    console.log('Edit field at index', index);
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
   }
 
   updateFieldOptions(index: number): void {

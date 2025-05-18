@@ -1,0 +1,21 @@
+<root>
+  <person
+  firstname="Netty"
+  lastname="Ehrman"
+  city="Roseau"
+  country="Tanzania, United Republic of"
+  firstname2="Nicoli"
+  lastname2="Kannry"
+  email="Nicoli.Kannry@yopmail.com"
+  />
+  <random>79</random>
+  <random_float>20.252</random_float>
+  <bool>false</bool>
+  <date>1997-05-06</date>
+  <regEx>helloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo to you</regEx>
+  <enum>online</enum>
+  <elt>Gabi</elt><elt>Lindie</elt><elt>Donnie</elt><elt>Linet</elt><elt>Kary</elt>  
+  <Nicoli>
+    <age>75</age>
+  </Nicoli>
+</root>

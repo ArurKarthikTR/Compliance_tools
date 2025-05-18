@@ -303,8 +303,38 @@ class TestGeneratorService:
         Returns:
             The generated value
         """
+<<<<<<< HEAD
         # Only handle the allowed data types
         if field_type == 'String' or field_type == 'string':
+=======
+        # Handle Angular component field types
+        if field_type == 'Name':
+            return self._generate_name(options)
+        elif field_type == 'Email':
+            return self._generate_email(options)
+        elif field_type == 'Phone':
+            return self._generate_phone(options)
+        elif field_type == 'Address':
+            return self._generate_address(options)
+        elif field_type == 'Country':
+            return self._generate_country(options)
+        elif field_type == 'String':
+            return self._generate_text(options)
+        elif field_type == 'Number':
+            return self._generate_number(options)
+        elif field_type == 'Float':
+            options['decimal'] = True
+            return self._generate_number(options)
+        elif field_type == 'Decimal':
+            options['decimal'] = True
+            return self._generate_number(options)
+        elif field_type == 'Boolean':
+            return self._generate_boolean(options)
+        elif field_type == 'Date':
+            return self._generate_date(options)
+        # Legacy field types
+        elif field_type == 'text':
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
             return self._generate_text(options)
         elif field_type == 'Number' or field_type == 'number':
             return self._generate_number(options)
@@ -404,4 +434,172 @@ class TestGeneratorService:
         """Generate boolean data"""
         return random.choice([True, False])
     
+<<<<<<< HEAD
     # Only keeping the methods needed for the supported data types
+=======
+    def _generate_name(self, options):
+        """Generate name data"""
+        if self.fake:
+            return self.fake.name()
+        else:
+            first_names = ['John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah']
+            last_names = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis']
+            return f"{random.choice(first_names)} {random.choice(last_names)}"
+    
+    def _generate_email(self, options):
+        """Generate email data"""
+        if self.fake:
+            return self.fake.email()
+        else:
+            domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'example.com']
+            username_length = random.randint(5, 10)
+            username = ''.join(random.choice(string.ascii_lowercase) for _ in range(username_length))
+            return f"{username}@{random.choice(domains)}"
+    
+    def _generate_phone(self, options):
+        """Generate phone data"""
+        if self.fake:
+            return self.fake.phone_number()
+        else:
+            return f"+1-{random.randint(100, 999)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+    
+    def _generate_address(self, options):
+        """Generate address data"""
+        if self.fake:
+            return self.fake.address().replace('\n', ', ')
+        else:
+            street_numbers = [str(random.randint(100, 9999)) for _ in range(5)]
+            street_names = ['Main St', 'Oak Ave', 'Maple Rd', 'Washington Blvd', 'Park Lane']
+            cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix']
+            states = ['NY', 'CA', 'IL', 'TX', 'AZ']
+            zip_codes = [f"{random.randint(10000, 99999)}" for _ in range(5)]
+            
+            street_number = random.choice(street_numbers)
+            street_name = random.choice(street_names)
+            city = random.choice(cities)
+            state = random.choice(states)
+            zip_code = random.choice(zip_codes)
+            
+            return f"{street_number} {street_name}, {city}, {state} {zip_code}"
+    
+    def _generate_select(self, options):
+        """Generate select data from provided options"""
+        values = options.get('values', [])
+        if values:
+            return random.choice(values)
+        else:
+            return "No options available"
+            
+    def _generate_first_name(self, options):
+        """Generate first name data"""
+        if self.fake:
+            return self.fake.first_name()
+        else:
+            first_names = ['John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 
+                          'Robert', 'Jennifer', 'William', 'Elizabeth', 'Richard', 'Susan',
+                          'Joseph', 'Jessica', 'Thomas', 'Karen', 'Charles', 'Nancy',
+                          'Christopher', 'Lisa', 'Daniel', 'Margaret', 'Matthew', 'Betty']
+            return random.choice(first_names)
+    
+    def _generate_last_name(self, options):
+        """Generate last name data"""
+        if self.fake:
+            return self.fake.last_name()
+        else:
+            last_names = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 
+                         'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas',
+                         'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Garcia',
+                         'Martinez', 'Robinson', 'Clark', 'Rodriguez', 'Lewis', 'Lee',
+                         'Walker', 'Hall', 'Allen', 'Young', 'Hernandez', 'King']
+            return random.choice(last_names)
+    
+    def _generate_city(self, options):
+        """Generate city data"""
+        if self.fake:
+            return self.fake.city()
+        else:
+            cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 
+                     'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose',
+                     'Austin', 'Jacksonville', 'Fort Worth', 'Columbus', 'San Francisco',
+                     'Charlotte', 'Indianapolis', 'Seattle', 'Denver', 'Washington',
+                     'Boston', 'El Paso', 'Nashville', 'Detroit', 'Portland']
+            return random.choice(cities)
+    
+    def _generate_country(self, options):
+        """Generate country data"""
+        if self.fake:
+            return self.fake.country()
+        else:
+            countries = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 
+                        'France', 'Japan', 'Italy', 'Spain', 'Mexico', 'Brazil', 'India',
+                        'China', 'Russia', 'South Korea', 'Netherlands', 'Sweden', 'Switzerland',
+                        'Norway', 'Denmark', 'Finland', 'Ireland', 'New Zealand', 'Singapore']
+            return random.choice(countries)
+    
+    def _generate_postal_code(self, options):
+        """Generate postal code data"""
+        if self.fake:
+            return self.fake.postcode()
+        else:
+            return f"{random.randint(10000, 99999)}"
+    
+    def _generate_company(self, options):
+        """Generate company name data"""
+        if self.fake:
+            return self.fake.company()
+        else:
+            prefixes = ['Tech', 'Global', 'Advanced', 'United', 'National', 'International', 
+                       'Digital', 'Future', 'Modern', 'Smart', 'Innovative', 'Strategic']
+            suffixes = ['Systems', 'Solutions', 'Technologies', 'Industries', 'Group', 'Corp', 
+                       'Inc', 'LLC', 'Enterprises', 'Services', 'Networks', 'Associates']
+            middle = ['Data', 'Software', 'Consulting', 'Communications', 'Media', 'Energy',
+                     'Financial', 'Health', 'Security', 'Logistics', 'Research', 'Development']
+            
+            company_type = random.choice([1, 2, 3])
+            if company_type == 1:
+                return f"{random.choice(prefixes)} {random.choice(middle)}"
+            elif company_type == 2:
+                return f"{random.choice(prefixes)} {random.choice(suffixes)}"
+            else:
+                return f"{random.choice(prefixes)} {random.choice(middle)} {random.choice(suffixes)}"
+    
+    def _generate_job_title(self, options):
+        """Generate job title data"""
+        if self.fake:
+            return self.fake.job()
+        else:
+            levels = ['Junior', 'Senior', 'Lead', 'Principal', 'Chief', 'Head of', 'Director of', 
+                     'VP of', 'Assistant', 'Associate']
+            roles = ['Software Engineer', 'Developer', 'Architect', 'Designer', 'Analyst', 
+                    'Manager', 'Consultant', 'Specialist', 'Administrator', 'Coordinator',
+                    'Technician', 'Officer', 'Representative', 'Supervisor', 'Strategist']
+            departments = ['Engineering', 'Development', 'Product', 'Marketing', 'Sales', 
+                          'Operations', 'Finance', 'HR', 'Support', 'Research', 'Data', 'IT']
+            
+            job_type = random.choice([1, 2, 3])
+            if job_type == 1:
+                return f"{random.choice(levels)} {random.choice(roles)}"
+            elif job_type == 2:
+                return f"{random.choice(roles)}"
+            else:
+                return f"{random.choice(departments)} {random.choice(roles)}"
+    
+    def _generate_custom_text(self, options):
+        """Generate custom text based on pattern"""
+        pattern = options.get('pattern', '')
+        if not pattern:
+            return self._generate_text(options)
+        
+        result = ''
+        for char in pattern:
+            if char == '#':
+                result += random.choice(string.digits)
+            elif char == '?':
+                result += random.choice(string.ascii_uppercase)
+            elif char == '*':
+                result += random.choice(string.ascii_letters + string.digits)
+            else:
+                result += char
+        
+        return result
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617

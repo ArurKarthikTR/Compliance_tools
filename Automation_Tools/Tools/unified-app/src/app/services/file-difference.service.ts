@@ -34,6 +34,26 @@ export class FileDifferenceService {
   }
 
   /**
+   * Get a preview of a file (first 10 rows for Excel files)
+   * @param file The file to preview
+   * @returns Observable with the preview data
+   */
+  previewFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    console.log('Sending file for preview:', file.name);
+    
+    return this.http.post(`${this.apiUrl}/preview`, formData)
+      .pipe(
+        tap(response => {
+          console.log('Received preview response:', response);
+        }),
+        catchError(this.handleError)
+      );
+  }
+
+  /**
    * Check if the backend service is healthy
    * @returns Observable with the health status
    */

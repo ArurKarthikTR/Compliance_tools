@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <div class="container" [formGroup]="configForm">
+=======
+<div [formGroup]="configForm">
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
   <h2>Test Data Generator</h2>
 
   <div class="header-controls">
@@ -25,7 +29,11 @@
     <p class="no-fields-message">No fields added yet. Add a field to start generating data.</p>
   </div>
 
+<<<<<<< HEAD
   <div formArrayName="fields" class="fields-container">
+=======
+  <div formArrayName="fields">
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
     <div class="field-card" *ngFor="let field of fields.controls; let i = index" [formGroupName]="i">
       <div class="field-header">
         <div class="field-name">{{ field.get('name')?.value }}</div>
@@ -47,7 +55,11 @@
 
   <div class="add-field-container" *ngIf="showFieldForm">
     <div class="add-field-form">
+<<<<<<< HEAD
       <h3>{{ isEditMode ? 'Edit Field' : 'Add New Field' }}</h3>
+=======
+      <h3>Add New Field</h3>
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
       
       <form #fieldForm="ngForm">
         <div class="form-group">
@@ -68,12 +80,17 @@
             id="dataType" 
             class="form-control"
             name="type"
+<<<<<<< HEAD
             [(ngModel)]="newField.type"
             (change)="updateNewFieldOptions()">
+=======
+            [(ngModel)]="newField.type">
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
             <option *ngFor="let type of fieldTypes" [value]="type.value">{{ type.label }}</option>
           </select>
         </div>
         
+<<<<<<< HEAD
         <!-- String Options -->
         <div class="form-group" *ngIf="newField.type === 'String'">
           <label for="stringMinLength">String Min Length:</label>
@@ -174,6 +191,8 @@
             [(ngModel)]="newField.options.endDate">
         </div>
         
+=======
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
         <div class="form-group">
           <label>Uniqueness:</label>
           <div class="radio-options">
@@ -201,9 +220,13 @@
       
       <div class="form-actions">
         <button type="button" class="btn btn-cancel" (click)="cancelAddField()">Cancel</button>
+<<<<<<< HEAD
         <button type="button" class="btn btn-save" (click)="saveNewField()" [disabled]="!fieldForm.valid">
           {{ isEditMode ? 'Update Field' : 'Save Field' }}
         </button>
+=======
+        <button type="button" class="btn btn-save" (click)="saveNewField()" [disabled]="!fieldForm.valid">Save Field</button>
+>>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
       </div>
     </div>
   </div>
