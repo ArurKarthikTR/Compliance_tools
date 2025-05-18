@@ -1,25 +1,19 @@
-<<<<<<< HEAD
 <div class="container" [formGroup]="configForm">
-=======
-<div [formGroup]="configForm">
->>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
-  <h2>Test Data Generator</h2>
-
-  <div class="header-controls">
+  <h2>Test Data Generator</h2>  <div class="header-controls">
     <div class="rows-input">
       <label for="rowCount">Rows:</label>
-      <input 
-        type="number" 
-        id="rowCount" 
-        formControlName="rowCount" 
-        min="1" 
+      <input
+        type="number"
+        id="rowCount"
+        formControlName="rowCount"
+        min="1"
         max="1000"
         class="form-control">
     </div>
-    <button 
-      type="button" 
-      class="btn btn-primary generate-btn" 
-      (click)="generatePreview()" 
+    <button
+      type="button"
+      class="btn btn-primary generate-btn"
+      (click)="generatePreview()"
       [disabled]="configForm.invalid || isLoading">
       Generate Data
     </button>
@@ -29,11 +23,7 @@
     <p class="no-fields-message">No fields added yet. Add a field to start generating data.</p>
   </div>
 
-<<<<<<< HEAD
   <div formArrayName="fields" class="fields-container">
-=======
-  <div formArrayName="fields">
->>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
     <div class="field-card" *ngFor="let field of fields.controls; let i = index" [formGroupName]="i">
       <div class="field-header">
         <div class="field-name">{{ field.get('name')?.value }}</div>
@@ -55,178 +45,163 @@
 
   <div class="add-field-container" *ngIf="showFieldForm">
     <div class="add-field-form">
-<<<<<<< HEAD
       <h3>{{ isEditMode ? 'Edit Field' : 'Add New Field' }}</h3>
-=======
-      <h3>Add New Field</h3>
->>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
-      
+
       <form #fieldForm="ngForm">
         <div class="form-group">
           <label for="columnName">Column Name:</label>
-          <input 
-            type="text" 
-            id="columnName" 
-            class="form-control" 
+          <input
+            type="text"
+            id="columnName"
+            class="form-control"
             placeholder="Enter column name"
             name="name"
-            [(ngModel)]="newField.name" 
+            [(ngModel)]="newField.name"
             required>
         </div>
-        
+
         <div class="form-group">
           <label for="dataType">Data Type:</label>
-          <select 
-            id="dataType" 
+          <select
+            id="dataType"
             class="form-control"
             name="type"
-<<<<<<< HEAD
             [(ngModel)]="newField.type"
             (change)="updateNewFieldOptions()">
-=======
-            [(ngModel)]="newField.type">
->>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
             <option *ngFor="let type of fieldTypes" [value]="type.value">{{ type.label }}</option>
           </select>
         </div>
-        
-<<<<<<< HEAD
+
         <!-- String Options -->
         <div class="form-group" *ngIf="newField.type === 'String'">
           <label for="stringMinLength">String Min Length:</label>
-          <input 
-            type="number" 
-            id="stringMinLength" 
-            class="form-control" 
+          <input
+            type="number"
+            id="stringMinLength"
+            class="form-control"
             name="minLength"
-            [(ngModel)]="newField.options.minLength" 
-            min="1" 
+            [(ngModel)]="newField.options.minLength"
+            min="1"
             max="100">
-          
+
           <label for="stringMaxLength">String Max Length:</label>
-          <input 
-            type="number" 
-            id="stringMaxLength" 
-            class="form-control" 
+          <input
+            type="number"
+            id="stringMaxLength"
+            class="form-control"
             name="maxLength"
-            [(ngModel)]="newField.options.maxLength" 
-            min="1" 
+            [(ngModel)]="newField.options.maxLength"
+            min="1"
             max="100">
         </div>
-        
+
         <!-- Number Options -->
         <div class="form-group" *ngIf="newField.type === 'Number'">
           <label for="numberMin">Min Value:</label>
-          <input 
-            type="number" 
-            id="numberMin" 
-            class="form-control" 
+          <input
+            type="number"
+            id="numberMin"
+            class="form-control"
             name="min"
             [(ngModel)]="newField.options.min">
-          
+
           <label for="numberMax">Max Value:</label>
-          <input 
-            type="number" 
-            id="numberMax" 
-            class="form-control" 
+          <input
+            type="number"
+            id="numberMax"
+            class="form-control"
             name="max"
             [(ngModel)]="newField.options.max">
-            
+
           <label for="numberLength">Number Length:</label>
-          <input 
-            type="number" 
-            id="numberLength" 
-            class="form-control" 
+          <input
+            type="number"
+            id="numberLength"
+            class="form-control"
             name="length"
-            [(ngModel)]="newField.options.length" 
-            min="1" 
+            [(ngModel)]="newField.options.length"
+            min="1"
             max="20">
         </div>
-        
+
         <!-- Float/Decimal Options -->
         <div class="form-group" *ngIf="newField.type === 'Float' || newField.type === 'Decimal'">
           <label for="floatMin">Min Value:</label>
-          <input 
-            type="number" 
-            id="floatMin" 
-            class="form-control" 
+          <input
+            type="number"
+            id="floatMin"
+            class="form-control"
             name="min"
             [(ngModel)]="newField.options.min">
-          
+
           <label for="floatMax">Max Value:</label>
-          <input 
-            type="number" 
-            id="floatMax" 
-            class="form-control" 
+          <input
+            type="number"
+            id="floatMax"
+            class="form-control"
             name="max"
             [(ngModel)]="newField.options.max">
-          
+
           <label for="floatPrecision">Decimal Precision:</label>
-          <input 
-            type="number" 
-            id="floatPrecision" 
-            class="form-control" 
+          <input
+            type="number"
+            id="floatPrecision"
+            class="form-control"
             name="precision"
-            [(ngModel)]="newField.options.precision" 
-            min="0" 
+            [(ngModel)]="newField.options.precision"
+            min="0"
             max="10">
         </div>
-        
+
         <!-- Date Options -->
         <div class="form-group" *ngIf="newField.type === 'Date'">
           <label for="startDate">Start Date:</label>
-          <input 
-            type="date" 
-            id="startDate" 
-            class="form-control" 
+          <input
+            type="date"
+            id="startDate"
+            class="form-control"
             name="startDate"
             [(ngModel)]="newField.options.startDate">
-          
+
           <label for="endDate">End Date:</label>
-          <input 
-            type="date" 
-            id="endDate" 
-            class="form-control" 
+          <input
+            type="date"
+            id="endDate"
+            class="form-control"
             name="endDate"
             [(ngModel)]="newField.options.endDate">
         </div>
-        
-=======
->>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
+
         <div class="form-group">
           <label>Uniqueness:</label>
           <div class="radio-options">
             <div class="radio-option">
-              <input 
-                type="radio" 
-                id="unique" 
-                name="unique" 
-                [value]="true" 
+              <input
+                type="radio"
+                id="unique"
+                name="unique"
+                [value]="true"
                 [(ngModel)]="newField.unique">
               <label for="unique">Unique</label>
             </div>
             <div class="radio-option">
-              <input 
-                type="radio" 
-                id="duplicate" 
-                name="unique" 
-                [value]="false" 
+              <input
+                type="radio"
+                id="duplicate"
+                name="unique"
+                [value]="false"
                 [(ngModel)]="newField.unique">
               <label for="duplicate">Duplicate</label>
             </div>
           </div>
         </div>
       </form>
-      
+
       <div class="form-actions">
         <button type="button" class="btn btn-cancel" (click)="cancelAddField()">Cancel</button>
-<<<<<<< HEAD
         <button type="button" class="btn btn-save" (click)="saveNewField()" [disabled]="!fieldForm.valid">
           {{ isEditMode ? 'Update Field' : 'Save Field' }}
         </button>
-=======
-        <button type="button" class="btn btn-save" (click)="saveNewField()" [disabled]="!fieldForm.valid">Save Field</button>
->>>>>>> 7f1e9e1e36989699f6b5c7d1ac078e76347bd617
       </div>
     </div>
   </div>
@@ -238,7 +213,7 @@
   <div *ngIf="successMessage" class="alert alert-success mt-3">
     {{ successMessage }}
   </div>
-  
+
   <div class="preview-container" *ngIf="previewData.length > 0">
     <h3>Data Preview</h3>
     <div class="table-responsive">
@@ -260,31 +235,31 @@
   <div class="download-section" *ngIf="previewData.length > 0">
     <h3>Download Data</h3>
     <div class="download-buttons">
-      <button 
-        type="button" 
-        class="btn btn-download-csv" 
-        (click)="downloadData('csv')" 
+      <button
+        type="button"
+        class="btn btn-download-csv"
+        (click)="downloadData('csv')"
         [disabled]="isLoading">
         Download as CSV
       </button>
-      <button 
-        type="button" 
-        class="btn btn-download-json" 
-        (click)="downloadData('json')" 
+      <button
+        type="button"
+        class="btn btn-download-json"
+        (click)="downloadData('json')"
         [disabled]="isLoading">
         Download as JSON
       </button>
-      <button 
-        type="button" 
-        class="btn btn-download-xml" 
-        (click)="downloadData('xml')" 
+      <button
+        type="button"
+        class="btn btn-download-xml"
+        (click)="downloadData('xml')"
         [disabled]="isLoading">
         Download as XML
       </button>
-      <button 
-        type="button" 
-        class="btn btn-download-excel" 
-        (click)="downloadData('excel')" 
+      <button
+        type="button"
+        class="btn btn-download-excel"
+        (click)="downloadData('excel')"
         [disabled]="isLoading">
         Download as Excel
       </button>
