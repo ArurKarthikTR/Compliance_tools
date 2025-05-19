@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DateConverterService } from '../services/date-converter.service';
@@ -11,13 +11,17 @@ import { DateConverterService } from '../services/date-converter.service';
   styleUrl: './date-converter.component.scss'
 })
 export class DateConverterComponent {
+  @ViewChild('fileInput') fileInput: ElementRef | null = null;
   selectedFile: File | null = null;
   newDate: string = '';
   isLoading: boolean = false;
   errorMessage: string = '';
   successMessage: string = '';
 
-  constructor(private dateConverterService: DateConverterService) {}
+  constructor(
+    private dateConverterService: DateConverterService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   onFileSelected(event: any): void {
     const files = event.target.files;
@@ -40,7 +44,6 @@ export class DateConverterComponent {
       return;
     }
 
-    // Validate date format (dd-mm-yyyy)
     const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
     if (!dateRegex.test(this.newDate)) {
       this.errorMessage = 'Please enter a valid date in dd-mm-yyyy format';
@@ -55,7 +58,7 @@ export class DateConverterComponent {
           this.isLoading = false;
           this.successMessage = 'File processed successfully';
           
-          // Create a download link for the processed file
+          // Download the file
           const url = window.URL.createObjectURL(response);
           const a = document.createElement('a');
           a.href = url;
@@ -64,6 +67,20 @@ export class DateConverterComponent {
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
+
+          // Clear the inputs after processing with a small delay
+          setTimeout(() => {
+            this.selectedFile = null;
+            this.newDate = '';
+            
+            // Reset file input element
+            if (this.fileInput && this.fileInput.nativeElement) {
+              this.fileInput.nativeElement.value = '';
+            }
+            
+            // Force Angular to detect changes
+            this.cdr.detectChanges();
+          }, 100);
         },
         error: (error) => {
           this.isLoading = false;

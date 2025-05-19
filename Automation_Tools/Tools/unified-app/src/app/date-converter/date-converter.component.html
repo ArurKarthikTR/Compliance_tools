@@ -12,7 +12,8 @@
             id="file" 
             (change)="onFileSelected($event)" 
             accept=".csv"
-            class="form-control">
+            class="form-control"
+            #fileInput>
           <small class="form-text">Only CSV files are supported</small>
         </div>
 
@@ -27,16 +28,15 @@
             class="form-control">
           <small class="form-text">Enter the date in dd-mm-yyyy format</small>
         </div>
+        <button 
+          type="submit" 
+          class="btn btn-primary" 
+          [disabled]="isLoading">
+          {{ isLoading ? 'Processing...' : 'Convert Dates' }}
+        </button>
       </form>
     </div>
   </div>
-
-  <button 
-    type="submit" 
-    class="btn btn-primary" 
-    [disabled]="isLoading">
-    {{ isLoading ? 'Processing...' : 'Convert Dates' }}
-  </button>
 
   <div *ngIf="errorMessage" class="alert alert-danger mt-3">
     {{ errorMessage }}
