@@ -66,6 +66,10 @@ def download_excel():
 def download_xml():
     return test_generator_service.download_xml(request.json)
 
+@app.route('/api/test-generator/import', methods=['POST'])
+def import_file():
+    return test_generator_service.import_file(request)
+
 # General routes
 @app.route('/api/health', methods=['GET'])
 def api_health_check():

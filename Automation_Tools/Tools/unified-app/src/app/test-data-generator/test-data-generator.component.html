@@ -17,6 +17,18 @@
       [disabled]="configForm.invalid || isLoading">
       Generate Data
     </button>
+    <div class="file-input-wrapper">
+      <input
+        type="file"
+        id="fileInput"
+        #fileInput
+        (change)="onFileSelected($event)"
+        accept=".csv,.xlsx"
+        [disabled]="isLoading">
+      <label for="fileInput" class="file-label" [class.disabled]="isLoading">
+        Choose File
+      </label>
+    </div>
   </div>
 
   <div *ngIf="fields.length === 0">
@@ -42,6 +54,7 @@
   <button type="button" class="btn btn-add-field" (click)="showFieldForm = true">
     + Add New Field
   </button>
+
 
   <div class="add-field-container" *ngIf="showFieldForm">
     <div class="add-field-form">
@@ -172,7 +185,19 @@
             [(ngModel)]="newField.options.endDate">
         </div>
 
-        <div class="form-group">
+        <!-- Constant Value Options -->
+        <div class="form-group" *ngIf="newField.type === 'Constant'">
+          <label for="constantValue">Constant Value:</label>
+          <input
+            type="text"
+            id="constantValue"
+            class="form-control"
+            name="value"
+            [(ngModel)]="newField.options.value"
+            placeholder="Enter the constant value">
+        </div>
+
+        <div class="form-group" *ngIf="newField.type !== 'Constant'">
           <label>Uniqueness:</label>
           <div class="radio-options">
             <div class="radio-option">

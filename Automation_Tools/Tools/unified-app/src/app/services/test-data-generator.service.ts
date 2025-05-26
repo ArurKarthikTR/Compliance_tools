@@ -75,4 +75,16 @@ export class TestDataGeneratorService {
       responseType: 'blob'
     });
   }
+  
+  /**
+   * Import a CSV or Excel file and extract field configurations
+   * @param file The file to import
+   * @returns Observable with the extracted field configurations
+   */
+  importFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return this.http.post(`${this.apiUrl}/import`, formData);
+  }
 }
