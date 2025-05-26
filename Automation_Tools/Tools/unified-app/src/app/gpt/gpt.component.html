@@ -1,7 +1,4 @@
 <div class="gpt-container">
-  <h2>GPT Compliance Assistant</h2>
-  
-
   <div class="chat-container">
     <!-- Chat history -->
     <div class="chat-history" #chatHistory>
@@ -39,22 +36,26 @@
 
     <!-- Input section -->
     <div class="chat-input-container">
-      <textarea 
-        class="chat-input" 
-        placeholder="Ask about compliance requirements..." 
-        [(ngModel)]="userInput" 
-        (keydown)="handleKeyDown($event)"
-        [disabled]="isLoading"
-        rows="1"
-        #inputElement
-        (input)="adjustTextareaHeight(inputElement)">
-      </textarea>
-      <button 
-        class="send-button" 
-        [disabled]="!userInput.trim() || isLoading"
-        (click)="sendMessage()">
-        Send
-      </button>
+      <div class="input-wrapper">
+        <textarea 
+          class="chat-input" 
+          placeholder="Ask about compliance requirements..." 
+          [(ngModel)]="userInput" 
+          (keydown)="handleKeyDown($event)"
+          [disabled]="isLoading"
+          rows="1"
+          #inputElement
+          (input)="adjustTextareaHeight(inputElement)">
+        </textarea>
+        <button 
+          class="send-button" 
+          [disabled]="!userInput.trim() || isLoading"
+          (click)="sendMessage()"
+          title="Send message">
+        </button>
+      </div>
+      <div class="input-footer">
+      </div>
     </div>
   </div>
 </div>
